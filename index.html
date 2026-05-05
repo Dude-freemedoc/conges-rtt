@@ -1,0 +1,2153 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestion Conges et RTT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+:root {
+  --bg-a: #f6f2e7;
+  --bg-b: #e8f5ff;
+  --ink: #0f1f2f;
+  --ink-muted: #3f556f;
+  --line: #bfd0dd;
+  --card: #ffffffcc;
+  --accent: #0b7a75;
+  --accent-2: #d66a1f;
+  --danger: #b83c3c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 20% 15%, #fffaf0, var(--bg-a) 35%, var(--bg-b) 100%);
+  min-height: 100vh;
+}
+
+.bg-shape {
+  position: fixed;
+  border-radius: 50%;
+  z-index: -1;
+  filter: blur(10px);
+  opacity: 0.28;
+}
+
+.bg-shape-a {
+  width: 420px;
+  height: 420px;
+  background: #67b5ff;
+  top: -120px;
+  left: -110px;
+}
+
+.bg-shape-b {
+  width: 420px;
+  height: 420px;
+  background: #ffc067;
+  right: -100px;
+  bottom: -150px;
+}
+
+.app-shell {
+  width: min(98vw, 1680px);
+  margin: 22px auto;
+  display: grid;
+  gap: 16px;
+}
+
+.app-header,
+.card {
+  background: var(--card);
+  border: 1px solid #ffffff;
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  box-shadow: 0 14px 28px #1f402b18;
+  padding: 16px;
+  animation: rise 420ms ease;
+}
+
+.app-status {
+  background: #f7fbff;
+  border: 1px solid #d6e6f3;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #24405f;
+  font-size: 0.86rem;
+}
+
+.app-status.readonly {
+  background: #fff7ea;
+  border-color: #f0d19f;
+  color: #7b5520;
+}
+
+.app-status.error {
+  background: #fff1f1;
+  border-color: #efc0c0;
+  color: #8a3030;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+h1,
+h2 {
+  margin: 4px 0 8px;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.toolbar {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 14px;
+}
+
+label {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  display: grid;
+  gap: 4px;
+}
+
+select,
+button {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  font-family: inherit;
+  background: white;
+  color: var(--ink);
+}
+
+button {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+button.danger {
+  border-color: #e5a2a2;
+  color: var(--danger);
+}
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.legend-item {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 6px 8px;
+  background: #ffffffa8;
+}
+
+.table-wrap {
+  overflow: auto;
+  max-height: 64vh;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.table-wrap.no-scroll {
+  overflow: visible;
+  max-height: none;
+}
+
+table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  background: #fff;
+}
+
+th,
+td {
+  border: 1px solid #dde8e2;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+th.sticky,
+td.sticky {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f3f8f5;
+}
+
+th.sticky-2,
+td.sticky-2 {
+  position: sticky;
+  left: 220px;
+  z-index: 2;
+  background: #f3f8f5;
+}
+
+th.name,
+td.name {
+  min-width: 220px;
+  text-align: left;
+}
+
+td.saturday,
+th.saturday {
+  background: #d9ecff;
+}
+
+td.sunday,
+th.sunday {
+  background: #ffe1e1;
+}
+
+td.holiday,
+th.holiday {
+  background: #ffe8bf;
+  box-shadow: inset 0 0 0 1px #f2be63;
+}
+
+td.saturday select,
+td.sunday select,
+td.holiday select {
+  background: #f6f7f9;
+}
+
+td.day-cell select {
+  width: 72px;
+  min-width: 72px;
+  padding: 3px 4px;
+  font-size: 0.72rem;
+  border-radius: 6px;
+}
+
+.initial-input {
+  width: 66px;
+  padding: 3px 4px;
+  border: 1px solid #c8d8cf;
+  border-radius: 6px;
+  text-align: right;
+}
+
+td.code-green  { background: #70AD47 !important; }
+td.code-orange { background: #ED7D31 !important; }
+td.code-purple { background: #9B59B6 !important; }
+td.code-blue   { background: #3498DB !important; }
+td.code-teal   { background: #1ABC9C !important; }
+td.code-red    { background: #FF0000 !important; }
+td.code-gray   { background: #9E9E9E !important; }
+td.code-slate  { background: #78909C !important; }
+
+td.code-green select,
+td.code-orange select,
+td.code-purple select,
+td.code-blue select,
+td.code-teal select,
+td.code-red select,
+td.code-gray select,
+td.code-slate select {
+  background: transparent;
+  color: #ffffff;
+  font-weight: 700;
+  border-color: rgba(255,255,255,0.4);
+}
+
+.totals {
+  background: #f8fbf9;
+  font-weight: 600;
+}
+
+tr.team-separator td {
+  background: #dce9f7;
+  color: #24405f;
+  font-weight: 700;
+}
+
+tr.team-member.team-n1 td {
+  background: #f4faff;
+}
+
+tr.team-member.team-n2 td {
+  background: #fff7ef;
+}
+
+tr.team-member.team-n1.row-odd td {
+  background: #e4f1ff;
+}
+tr.team-member.team-n2.row-odd td {
+  background: #ffe3cc;
+}
+
+tr.team-member.team-n1 td.saturday,
+tr.team-member.team-n1.row-odd td.saturday,
+tr.team-member.team-n2 td.saturday,
+tr.team-member.team-n2.row-odd td.saturday {
+  background: #d9ecff;
+}
+tr.team-member.team-n1 td.sunday,
+tr.team-member.team-n1.row-odd td.sunday,
+tr.team-member.team-n2 td.sunday,
+tr.team-member.team-n2.row-odd td.sunday {
+  background: #ffe1e1;
+}
+tr.team-member.team-n1 td.holiday,
+tr.team-member.team-n1.row-odd td.holiday,
+tr.team-member.team-n2 td.holiday,
+tr.team-member.team-n2.row-odd td.holiday {
+  background: #ffe8bf;
+  box-shadow: inset 0 0 0 1px #f2be63;
+}
+
+tr.team-member.team-n1 td.sticky,
+tr.team-member.team-n1 td.sticky-2 {
+  background: #dff0ff;
+}
+
+tr.team-member.team-n2 td.sticky,
+tr.team-member.team-n2 td.sticky-2 {
+  background: #ffe8d2;
+}
+
+tr.team-member.team-n1.row-odd td.sticky,
+tr.team-member.team-n1.row-odd td.sticky-2 {
+  background: #cce6ff;
+}
+tr.team-member.team-n2.row-odd td.sticky,
+tr.team-member.team-n2.row-odd td.sticky-2 {
+  background: #ffd8bb;
+}
+
+tr.presence-row td {
+  background: #edf4ff;
+  font-weight: 700;
+  color: #1f4877;
+}
+
+tr.presence-row td.saturday {
+  background: #d4e8ff;
+  color: #244f7d;
+}
+
+tr.presence-row td.sunday {
+  background: #ffd8d8;
+  color: #7a2f2f;
+}
+
+tr.presence-row td.holiday {
+  background: #ffe3b5;
+  color: #6e4a08;
+}
+
+td.presence-cell.presence-end {
+  background: #f6f9fd;
+}
+
+#planningTable.compact th,
+#planningTable.compact td {
+  padding: 1px 2px;
+  font-size: 0.68rem;
+}
+
+#planningTable.compact th.name,
+#planningTable.compact td.name {
+  width: 145px;
+  min-width: 145px;
+  max-width: 145px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  padding-left: 6px;
+}
+
+#planningTable.compact th.sticky-2,
+#planningTable.compact td.sticky-2 {
+  left: 145px;
+  width: 30px;
+  min-width: 30px;
+}
+
+#planningTable.compact th:not(.name):not(.sticky-2),
+#planningTable.compact td:not(.name):not(.sticky-2) {
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+}
+
+.code-chip {
+  display: block;
+  width: 100%;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+td.day-cell {
+  padding: 1px !important;
+  line-height: 1;
+}
+
+.code-picker {
+  position: absolute;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #bcd;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px #00000033;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px;
+  min-width: 210px;
+}
+
+.picker-opt {
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid #dde8e2;
+  background: #f8fbf9;
+  color: var(--ink);
+  transition: transform 80ms;
+}
+
+.picker-opt:hover {
+  transform: scale(1.08);
+}
+
+.picker-opt.code-green  { background: #70AD47; color: #fff; border-color: #5a9035; }
+.picker-opt.code-orange { background: #ED7D31; color: #fff; border-color: #c0601c; }
+.picker-opt.code-purple { background: #9B59B6; color: #fff; border-color: #7d3e99; }
+.picker-opt.code-blue   { background: #3498DB; color: #fff; border-color: #2178b5; }
+.picker-opt.code-teal   { background: #1ABC9C; color: #fff; border-color: #149a7e; }
+.picker-opt.code-red    { background: #FF0000; color: #fff; border-color: #cc0000; }
+.picker-opt.code-gray   { background: #9E9E9E; color: #fff; border-color: #757575; }
+.picker-opt.code-slate  { background: #78909C; color: #fff; border-color: #546E7A; }
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 200ms ease;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #dde8e2;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--ink-muted);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: var(--ink);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.employee-form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.employee-form h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+}
+
+.employee-form input,
+.employee-form select {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 10px;
+  font-family: inherit;
+  background: white;
+  color: var(--ink);
+}
+
+.employee-form button {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 10px;
+  font-family: inherit;
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.employee-form button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.employee-form button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.form-buttons button {
+  flex: 1;
+}
+
+.employee-list h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+}
+
+.employee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #dde8e2;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: #f8fbf9;
+}
+
+.employee-info {
+  flex: 1;
+}
+
+.employee-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.employee-team {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.employee-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.employee-actions button {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 80ms;
+}
+
+.employee-actions button:hover {
+  transform: translateY(-1px);
+}
+
+.employee-actions button.delete {
+  color: var(--danger);
+  border-color: #e5a2a2;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #dde8e2;
+  margin: 20px 0;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    width: min(100vw, 1680px);
+    margin: 10px auto;
+    padding: 0 8px;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  th,
+  td {
+    font-size: 0.72rem;
+    padding: 3px 4px;
+  }
+}
+    </style>
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Planning equipe</p>
+          <h1>Gestion Conges / RTT</h1>
+          <p class="subtitle">Periode Juin 2026 -> Mai 2027</p>
+        </div>
+        <div class="toolbar">
+          <label>
+            Mois
+            <select id="monthSelect"></select>
+          </label>
+          <button id="manageEmployeesBtn" type="button">Gérer collaborateurs</button>
+          <button id="exportCsvBtn" type="button">Exporter CSV</button>
+          <button id="clearMonthBtn" type="button" class="danger">Vider le mois</button>
+        </div>
+      </header>
+
+      <section id="appStatus" class="app-status"></section>
+
+      <section class="legend" id="legend"></section>
+
+      <section class="card">
+        <h2>Planning mensuel</h2>
+        <div class="table-wrap">
+          <table id="planningTable"></table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Recap annuel</h2>
+        <div class="table-wrap no-scroll">
+          <table id="annualTable"></table>
+        </div>
+      </section>
+    </main>
+
+    <div id="codePicker" class="code-picker" style="display:none"></div>
+
+    <!-- Modal gestion collaborateurs -->
+    <div id="employeeModal" class="modal" style="display:none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Gérer les collaborateurs</h2>
+          <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="employee-form">
+            <h3>Ajouter / Modifier</h3>
+            <input type="text" id="employeeName" placeholder="Nom" />
+            <select id="employeeTeam">
+              <option value="N1">Support N1</option>
+              <option value="N2">Support N2</option>
+            </select>
+            <button id="addEmployeeBtn" type="button">Ajouter</button>
+            <button id="updateEmployeeBtn" type="button" style="display:none">Modifier</button>
+            <button id="cancelEditBtn" type="button" style="display:none">Annuler</button>
+          </div>
+          <hr />
+          <div class="employee-list">
+            <h3>Collaborateurs</h3>
+            <div id="employeeListContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+const STORAGE_KEY = "gestion-conges-v1";
+const SHARED_SYNC_INTERVAL_MS = 10000;
+
+// ── Configuration JSONbin.io ──────────────────────────────────────────────────
+// 1. Créez un compte gratuit sur https://jsonbin.io
+// 2. Créez un bin (New Bin) avec comme contenu initial : {"state":null} → Create
+// 3. Copiez l'ID du bin (ex: 6638a1f1ad19ca34f8a12345) dans JSONBIN_BIN_ID
+// 4. Dans Account > API Keys :
+//    - Copiez le Master Key  → sera la clé éditeur passée via ?key=...
+//    - Créez un Access Key   → mettez-le dans JSONBIN_ACCESS_KEY (lecture seule)
+const JSONBIN_BIN_ID     = "69f9ec02856a682189abd3e2"; // ← Bin ID
+const JSONBIN_ACCESS_KEY = "$2a$10$ZBhZnz4ly/b06u2KC8ly3uJalID..HIv8ac/qqwj7/4PnTzm1dfjS"; // ← Access Key (lecture seule, visible dans l'app)
+
+const monthDefs = [
+  { key: "2026-06", label: "Juin 2026" },
+  { key: "2026-07", label: "Juillet 2026" },
+  { key: "2026-08", label: "Aout 2026" },
+  { key: "2026-09", label: "Septembre 2026" },
+  { key: "2026-10", label: "Octobre 2026" },
+  { key: "2026-11", label: "Novembre 2026" },
+  { key: "2026-12", label: "Decembre 2026" },
+  { key: "2027-01", label: "Janvier 2027" },
+  { key: "2027-02", label: "Fevrier 2027" },
+  { key: "2027-03", label: "Mars 2027" },
+  { key: "2027-04", label: "Avril 2027" },
+  { key: "2027-05", label: "Mai 2027" }
+];
+
+const employees = [
+  { name: "Jean-Marie Da Silva", team: "N1" },
+  { name: "Julien Baud", team: "N1" },
+  { name: "Ludovic Rodriguez", team: "N1" },
+  { name: "Arnaud Picoulet", team: "N1" },
+  { name: "Benjamin Calbet", team: "N1" },
+  { name: "Benoit Roinard", team: "N1" },
+  { name: "Dylan Joubin", team: "N1" },
+  { name: "Emeric Bonnemaison", team: "N1" },
+  { name: "Florian Gauvin", team: "N1" },
+  { name: "Jean Michel Defontaine", team: "N1" },
+  { name: "Jeremy Vivarrat", team: "N1" },
+  { name: "Julian Machex", team: "N1" },
+  { name: "Maxime Werner", team: "N1" },
+  { name: "Michel Vu", team: "N1" },
+  { name: "Pierre Coly", team: "N1" },
+  { name: "Romuald Gouleau", team: "N1" },
+  { name: "Geoffray Rolland", team: "N2" },
+  { name: "Pascal Raimbault", team: "N2" },
+  { name: "Baptiste Hamet", team: "N2" },
+  { name: "Emeline Bequerel", team: "N2" },
+  { name: "Matthieu Moulin", team: "N2" },
+  { name: "Nil Salaun", team: "N2" },
+  { name: "Patrick Serre", team: "N2" }
+];
+
+const employeeNames = employees.map((e) => e.name);
+const teams = ["N1", "N2"];
+
+const defaultInitialByTeam = {
+  N1: { CP: 25, RTT: 0, FR: 0, reliquatCP: 0, reliquatRTT: 0 },
+  N2: { CP: 25, RTT: 0, FR: 0, reliquatCP: 0, reliquatRTT: 0 }
+};
+
+const codes = [
+  { code: "", label: "-" },
+  { code: "CP", label: "Conge paye" },
+  { code: "CPm", label: "CP matin (0.5)" },
+  { code: "CPam", label: "CP apres-midi (0.5)" },
+  { code: "CPp", label: "CP provisoire" },
+  { code: "RTT", label: "RTT" },
+  { code: "RTTm", label: "RTT matin (0.5)" },
+  { code: "RTTam", label: "RTT apres-midi (0.5)" },
+  { code: "RTTp", label: "RTT provisoire" },
+  { code: "CSS", label: "Conge sans solde" },
+  { code: "FAM", label: "Evenement familial" },
+  { code: "FR", label: "Fractionnement" },
+  { code: "PM", label: "Paternite / Maternite" },
+  { code: "MAL", label: "Maladie" },
+  { code: "DIV", label: "Divers" },
+  { code: "RC", label: "Recuperation" }
+];
+
+const codeToWeight = {
+  CP: { CP: 1 },
+  CPm: { CP: 0.5 },
+  CPam: { CP: 0.5 },
+  CPp: { CP: 1 },
+  RTT: { RTT: 1 },
+  RTTm: { RTT: 0.5 },
+  RTTam: { RTT: 0.5 },
+  RTTp: { RTT: 1 },
+  CSS: { CSS: 1 },
+  FAM: { FAM: 1 },
+  FR: { FR: 1 },
+  PM: { PM: 1 },
+  MAL: { MAL: 1 }
+};
+
+const weekdayShort = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
+
+const holidays = {
+  "2026-07-14": "Fete nationale",
+  "2026-08-15": "Assomption",
+  "2026-11-01": "Toussaint",
+  "2026-11-11": "Armistice",
+  "2026-12-25": "Noel",
+  "2027-01-01": "Jour de l'an",
+  "2027-04-05": "Lundi de Paques",
+  "2027-05-01": "Fete du Travail",
+  "2027-05-08": "Victoire 1945",
+  "2027-05-13": "Ascension",
+  "2027-05-24": "Lundi de Pentecote"
+};
+
+const monthSelect = document.getElementById("monthSelect");
+const legend = document.getElementById("legend");
+const planningTable = document.getElementById("planningTable");
+const annualTable = document.getElementById("annualTable");
+const exportCsvBtn = document.getElementById("exportCsvBtn");
+const clearMonthBtn = document.getElementById("clearMonthBtn");
+const appStatus = document.getElementById("appStatus");
+
+const manageEmployeesBtn = document.getElementById("manageEmployeesBtn");
+const employeeModal = document.getElementById("employeeModal");
+const modalCloseBtn = document.getElementById("modalCloseBtn");
+const employeeName = document.getElementById("employeeName");
+const employeeTeam = document.getElementById("employeeTeam");
+const addEmployeeBtn = document.getElementById("addEmployeeBtn");
+const updateEmployeeBtn = document.getElementById("updateEmployeeBtn");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
+const employeeListContainer = document.getElementById("employeeListContainer");
+
+let editingEmployeeIndex = -1;
+
+const SHAREPOINT_CONFIG = {
+  balancesListTitle: "CongesCollaborateurs",
+  entriesListTitle: "CongesSaisies",
+  editorGroupName: "Modificateurs Conges",
+  defaultFolderRelativeUrl: "/Shared Documents/General/CONGES/2026-2027",
+  fields: {
+    team: "Team",
+    employeeName: "EmployeeName",
+    absenceDate: "AbsenceDate",
+    absenceCode: "AbsenceCode",
+    cpInitial: "CPInitial",
+    rttInitial: "RTTInitial",
+    frInitial: "FRInitial"
+  }
+};
+
+let state = createEmptyState();
+let selectedMonth = monthDefs[0].key;
+let editorKey = null;
+let appContext = {
+  provider: null,
+  mode: "local",
+  canEdit: true,
+  currentUser: "",
+  statusTone: "",
+  statusMessage: "Initialisation en cours..."
+};
+
+function extractEditorKeyFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const key = params.get("key");
+  if (key) {
+    try {
+      localStorage.setItem("editor-key", key);
+    } catch (e) {
+      console.warn("Impossible de sauvegarder la clé d'édition", e);
+    }
+    return key;
+  }
+  try {
+    return localStorage.getItem("editor-key");
+  } catch (e) {
+    return null;
+  }
+}
+
+const codeColorClass = {
+  CP: "code-green",
+  CPm: "code-green",
+  CPam: "code-green",
+  CPp: "code-orange",
+  RTT: "code-green",
+  RTTm: "code-green",
+  RTTam: "code-green",
+  RTTp: "code-orange",
+  CSS: "code-green",
+  FAM: "code-purple",
+  FR: "code-blue",
+  PM: "code-teal",
+  MAL: "code-red",
+  DIV: "code-gray",
+  RC: "code-green"
+};
+
+editorKey = extractEditorKeyFromURL();
+
+void init();
+
+async function init() {
+  renderLegend();
+  renderMonthSelect();
+  setupPicker();
+
+  monthSelect.addEventListener("change", () => {
+    selectedMonth = monthSelect.value;
+    closePicker();
+    renderPlanning();
+  });
+
+  document.addEventListener("click", closePicker);
+
+  exportCsvBtn.addEventListener("click", exportCurrentMonthToCsv);
+  clearMonthBtn.addEventListener("click", () => {
+    void clearCurrentMonth();
+  });
+
+  manageEmployeesBtn.addEventListener("click", openEmployeeModal);
+  modalCloseBtn.addEventListener("click", closeEmployeeModal);
+  employeeModal.addEventListener("click", (e) => {
+    if (e.target === employeeModal) {
+      closeEmployeeModal();
+    }
+  });
+  addEmployeeBtn.addEventListener("click", addOrUpdateEmployee);
+  updateEmployeeBtn.addEventListener("click", addOrUpdateEmployee);
+  cancelEditBtn.addEventListener("click", cancelEmployeeEdit);
+  employeeName.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      addOrUpdateEmployee();
+    }
+  });
+
+  await bootstrapDataProvider();
+  startBackgroundSync();
+}
+
+async function bootstrapDataProvider() {
+  loadEmployeesFromStorage();
+
+  try {
+    appContext.provider = await createDataProvider();
+    appContext.mode = appContext.provider.mode;
+    appContext.canEdit = appContext.provider.canEdit;
+    appContext.currentUser = appContext.provider.currentUser || "";
+    state = await appContext.provider.loadState();
+
+    if (appContext.provider.mode === "sharepoint") {
+      appContext.statusTone = appContext.canEdit ? "" : "readonly";
+      appContext.statusMessage = appContext.canEdit
+        ? `Mode SharePoint actif. Utilisateur: ${appContext.currentUser || "inconnu"}.`
+        : `Mode SharePoint en lecture seule. Utilisateur: ${appContext.currentUser || "inconnu"}.`;
+    } else if (appContext.provider.mode === "netlify") {
+      appContext.statusTone = "";
+      if (appContext.canEdit) {
+        appContext.statusMessage = "Mode collaboratif Netlify actif (ÉDITEUR). Synchronisation automatique toutes les 10 secondes.";
+      } else {
+        appContext.statusTone = "readonly";
+        appContext.statusMessage = "Mode collaboratif Netlify actif (LECTEUR). Consultation seule. Synchronisation automatique toutes les 10 secondes.";
+      }
+    } else {
+      appContext.statusTone = "";
+      appContext.statusMessage = "Mode local actif. Les donnees restent dans ce navigateur tant que SharePoint n'est pas configure.";
+    }
+  } catch (error) {
+    console.error("Initialisation impossible", error);
+    appContext.provider = createLocalProvider();
+    appContext.mode = "local";
+    appContext.canEdit = true;
+    state = await appContext.provider.loadState();
+    appContext.statusTone = "error";
+    appContext.statusMessage = "Echec de l'initialisation SharePoint. Repli en mode local.";
+  }
+
+  syncUiState();
+  renderPlanning();
+  renderAnnual();
+}
+
+function syncUiState() {
+  appStatus.textContent = appContext.statusMessage;
+  appStatus.className = `app-status ${appContext.statusTone}`.trim();
+  clearMonthBtn.disabled = !appContext.canEdit;
+}
+
+function detectSharePointContext() {
+  return Boolean(window._spPageContextInfo) || /\.sharepoint\.com$/i.test(window.location.hostname);
+}
+
+function detectJsonbinContext() {
+  return Boolean(JSONBIN_BIN_ID);
+}
+
+function sortEmployeesByTeamAndFirstName() {
+  const n1 = employees.filter((e) => e.team === "N1");
+  const n2 = employees.filter((e) => e.team === "N2");
+
+  const n1Pinned = ["Jean-Marie Da Silva", "Julien Baud", "Ludovic Rodriguez"];
+  const n2Pinned = ["Geoffray Rolland", "Pascal Raimbault"];
+
+  const n1Pinned_ = n1.filter((e) => n1Pinned.includes(e.name));
+  const n1Other = n1
+    .filter((e) => !n1Pinned.includes(e.name))
+    .sort((a, b) => a.name.split(" ")[0].localeCompare(b.name.split(" ")[0], "fr"));
+
+  const n2Pinned_ = n2.filter((e) => n2Pinned.includes(e.name));
+  const n2Other = n2
+    .filter((e) => !n2Pinned.includes(e.name))
+    .sort((a, b) => a.name.split(" ")[0].localeCompare(b.name.split(" ")[0], "fr"));
+
+  employees.length = 0;
+  employees.push(...n1Pinned_, ...n1Other, ...n2Pinned_, ...n2Other);
+}
+
+function saveEmployeesToStorage() {
+  try {
+    localStorage.setItem("gestion-conges-employees", JSON.stringify(employees));
+  } catch (e) {
+    console.error("Impossible de sauvegarder les collaborateurs", e);
+  }
+}
+
+function loadEmployeesFromStorage() {
+  try {
+    const stored = localStorage.getItem("gestion-conges-employees");
+    if (stored) {
+      const loaded = JSON.parse(stored);
+      employees.length = 0;
+      employees.push(...loaded);
+    }
+  } catch (e) {
+    console.error("Impossible de charger les collaborateurs", e);
+  }
+}
+
+function openEmployeeModal() {
+  editingEmployeeIndex = -1;
+  employeeName.value = "";
+  employeeTeam.value = "N1";
+  addEmployeeBtn.style.display = "block";
+  updateEmployeeBtn.style.display = "none";
+  cancelEditBtn.style.display = "none";
+  renderEmployeeList();
+  employeeModal.style.display = "flex";
+  employeeName.focus();
+}
+
+function closeEmployeeModal() {
+  employeeModal.style.display = "none";
+  editingEmployeeIndex = -1;
+}
+
+function renderEmployeeList() {
+  employeeListContainer.innerHTML = "";
+  for (let i = 0; i < employees.length; i++) {
+    const emp = employees[i];
+    const div = document.createElement("div");
+    div.className = "employee-item";
+    div.innerHTML = `
+      <div class="employee-info">
+        <div class="employee-name">${emp.name}</div>
+        <div class="employee-team">Support ${emp.team}</div>
+      </div>
+      <div class="employee-actions">
+        <button type="button" data-index="${i}">Modifier</button>
+        <button type="button" class="delete" data-index="${i}">Supprimer</button>
+      </div>
+    `;
+    const editBtn = div.querySelector("button:first-of-type");
+    const delBtn = div.querySelector("button.delete");
+    editBtn.addEventListener("click", () => editEmployee(i));
+    delBtn.addEventListener("click", () => deleteEmployee(i));
+    employeeListContainer.appendChild(div);
+  }
+}
+
+function editEmployee(index) {
+  editingEmployeeIndex = index;
+  const emp = employees[index];
+  employeeName.value = emp.name;
+  employeeTeam.value = emp.team;
+  addEmployeeBtn.style.display = "none";
+  updateEmployeeBtn.style.display = "block";
+  cancelEditBtn.style.display = "block";
+  employeeName.focus();
+  employeeName.select();
+}
+
+function cancelEmployeeEdit() {
+  editingEmployeeIndex = -1;
+  employeeName.value = "";
+  employeeTeam.value = "N1";
+  addEmployeeBtn.style.display = "block";
+  updateEmployeeBtn.style.display = "none";
+  cancelEditBtn.style.display = "none";
+  employeeName.focus();
+}
+
+function addOrUpdateEmployee() {
+  const name = employeeName.value.trim();
+  const team = employeeTeam.value;
+
+  if (!name) {
+    alert("Veuillez entrer un nom");
+    return;
+  }
+
+  if (editingEmployeeIndex >= 0) {
+    const oldName = employees[editingEmployeeIndex].name;
+    employees[editingEmployeeIndex].name = name;
+    employees[editingEmployeeIndex].team = team;
+
+    if (oldName !== name && state.data[oldName]) {
+      state.data[name] = state.data[oldName];
+      delete state.data[oldName];
+      if (state.initialBalances[oldName]) {
+        state.initialBalances[name] = state.initialBalances[oldName];
+        delete state.initialBalances[oldName];
+      }
+    }
+    editingEmployeeIndex = -1;
+  } else {
+    const exists = employees.some((e) => e.name === name);
+    if (exists) {
+      alert("Ce collaborateur existe déjà");
+      return;
+    }
+    employees.push({ name, team });
+  }
+
+  sortEmployeesByTeamAndFirstName();
+  saveEmployeesToStorage();
+
+  const employeeNames = employees.map((e) => e.name);
+  const newState = createEmptyState();
+  for (const empName of employeeNames) {
+    if (state.data[empName]) {
+      newState.data[empName] = { ...state.data[empName] };
+    }
+    if (state.initialBalances[empName]) {
+      newState.initialBalances[empName] = { ...state.initialBalances[empName] };
+    }
+  }
+  state = newState;
+  void persistSnapshot();
+
+  employeeName.value = "";
+  employeeTeam.value = "N1";
+  addEmployeeBtn.style.display = "block";
+  updateEmployeeBtn.style.display = "none";
+  cancelEditBtn.style.display = "none";
+  renderEmployeeList();
+  renderPlanning();
+  renderAnnual();
+}
+
+function deleteEmployee(index) {
+  const emp = employees[index];
+  const isConfirmed = window.confirm(`Êtes-vous sûr de vouloir supprimer ${emp.name} ?`);
+  if (!isConfirmed) {
+    return;
+  }
+
+  const name = emp.name;
+  employees.splice(index, 1);
+  sortEmployeesByTeamAndFirstName();
+  saveEmployeesToStorage();
+
+  if (state.data[name]) {
+    delete state.data[name];
+  }
+  if (state.initialBalances[name]) {
+    delete state.initialBalances[name];
+  }
+  void persistSnapshot();
+
+  renderEmployeeList();
+  renderPlanning();
+  renderAnnual();
+}
+
+function resolveSharePointWebUrl() {
+  if (window._spPageContextInfo?.webAbsoluteUrl) {
+    return window._spPageContextInfo.webAbsoluteUrl;
+  }
+
+  const path = window.location.pathname || "";
+  const siteMatch = path.match(/^\/(:[a-z]:\/r\/)?(sites|teams)\/([^/]+)/i);
+  if (siteMatch) {
+    return `${window.location.origin}/${siteMatch[2]}/${siteMatch[3]}`;
+  }
+
+  return window.location.origin;
+}
+
+function createLocalProvider() {
+  return {
+    mode: "local",
+    canEdit: true,
+    currentUser: "",
+    async loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          return ensureStateShape(JSON.parse(raw));
+        } catch (err) {
+          console.warn("Etat local invalide, reinitialisation", err);
+        }
+      }
+      return createEmptyState();
+    },
+    async saveSnapshot(nextState) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    },
+    async saveAbsence() {},
+    async saveInitialBalance() {},
+    async clearMonth() {}
+  };
+}
+
+async function createDataProvider() {
+  if (detectSharePointContext()) {
+    try {
+      return await createSharePointProvider();
+    } catch (error) {
+      console.warn("SharePoint indisponible, tentative Netlify puis repli local", error);
+    }
+  }
+
+  if (detectJsonbinContext()) {
+    try {
+      return await createJsonbinProvider();
+    } catch (error) {
+      console.warn("JSONbin indisponible, repli local", error);
+    }
+  }
+
+  return createLocalProvider();
+}
+
+async function createJsonbinProvider() {
+  const provider = {
+    mode: "jsonbin",
+    canEdit: !!editorKey,
+    currentUser: "",
+    async loadState() {
+      const url = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`;
+      const headers = { "X-Bin-Meta": "false" };
+      if (editorKey) {
+        headers["X-Master-Key"] = editorKey;
+      } else if (JSONBIN_ACCESS_KEY) {
+        headers["X-Access-Key"] = JSONBIN_ACCESS_KEY;
+      }
+      const response = await fetch(url, { method: "GET", headers });
+
+      if (!response.ok) {
+        throw new Error(`JSONbin GET échoué (${response.status})`);
+      }
+
+      const payload = await response.json();
+      if (!payload?.state) {
+        return createEmptyState();
+      }
+      return ensureStateShape(payload.state);
+    },
+    async saveSnapshot(nextState) {
+      if (!editorKey) {
+        appContext.canEdit = false;
+        syncUiState();
+        throw new Error("Clé d'édition requise pour modifier les données");
+      }
+      const url = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": editorKey
+        },
+        body: JSON.stringify({ state: nextState })
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        appContext.canEdit = false;
+        syncUiState();
+        throw new Error("Clé d'édition invalide : passage en mode lecture seule");
+      }
+
+      if (!response.ok) {
+        throw new Error(`JSONbin PUT échoué (${response.status})`);
+      }
+    },
+    async saveAbsence() {},
+    async saveInitialBalance() {},
+    async clearMonth() {}
+  };
+
+  await provider.loadState();
+  return provider;
+}
+
+async function createSharePointProvider() {
+  const webUrl = resolveSharePointWebUrl();
+  const provider = {
+    mode: "sharepoint",
+    canEdit: false,
+    currentUser: "",
+    webUrl,
+    digestValue: "",
+    digestExpiresAt: 0,
+    balanceItemIds: {},
+    entryItemIds: {},
+    async loadState() {
+      const next = createEmptyState();
+      const balances = await spGetItems(this, SHAREPOINT_CONFIG.balancesListTitle, ["Id", "Title", SHAREPOINT_CONFIG.fields.cpInitial, SHAREPOINT_CONFIG.fields.rttInitial, SHAREPOINT_CONFIG.fields.frInitial], "$top=5000");
+      for (const item of balances) {
+        const name = item.Title;
+        if (!next.initialBalances[name]) {
+          continue;
+        }
+        this.balanceItemIds[name] = item.Id;
+        next.initialBalances[name].CP = Number(item[SHAREPOINT_CONFIG.fields.cpInitial] ?? next.initialBalances[name].CP);
+        next.initialBalances[name].RTT = Number(item[SHAREPOINT_CONFIG.fields.rttInitial] ?? next.initialBalances[name].RTT);
+        next.initialBalances[name].FR = Number(item[SHAREPOINT_CONFIG.fields.frInitial] ?? next.initialBalances[name].FR);
+      }
+
+      const entries = await spGetItems(this, SHAREPOINT_CONFIG.entriesListTitle, ["Id", "Title", SHAREPOINT_CONFIG.fields.employeeName, SHAREPOINT_CONFIG.fields.absenceDate, SHAREPOINT_CONFIG.fields.absenceCode], "$top=5000");
+      for (const item of entries) {
+        const name = item[SHAREPOINT_CONFIG.fields.employeeName] || item.Title?.split("|")[0];
+        const rawDate = item[SHAREPOINT_CONFIG.fields.absenceDate] || item.Title?.split("|")[1];
+        const code = item[SHAREPOINT_CONFIG.fields.absenceCode];
+        if (!name || !rawDate || !code || !next.data[name]) {
+          continue;
+        }
+        const dateKey = String(rawDate).slice(0, 10);
+        const monthKey = dateKey.slice(0, 7);
+        const day = String(Number(dateKey.slice(8, 10)));
+        if (!next.data[name][monthKey]) {
+          continue;
+        }
+        next.data[name][monthKey][day] = code;
+        this.entryItemIds[getEntryKey(name, dateKey)] = item.Id;
+      }
+
+      return next;
+    },
+    async saveSnapshot(nextState) {
+      return undefined;
+    },
+    async saveAbsence(name, dateKey, code) {
+      const itemKey = getEntryKey(name, dateKey);
+      const itemId = this.entryItemIds[itemKey];
+
+      if (!code) {
+        if (itemId) {
+          await spDeleteItem(this, SHAREPOINT_CONFIG.entriesListTitle, itemId);
+          delete this.entryItemIds[itemKey];
+        }
+        return;
+      }
+
+      const payload = {
+        Title: itemKey,
+        [SHAREPOINT_CONFIG.fields.employeeName]: name,
+        [SHAREPOINT_CONFIG.fields.absenceDate]: `${dateKey}T00:00:00Z`,
+        [SHAREPOINT_CONFIG.fields.absenceCode]: code,
+        [SHAREPOINT_CONFIG.fields.team]: getEmployeeByName(name)?.team || ""
+      };
+
+      if (itemId) {
+        await spUpdateItem(this, SHAREPOINT_CONFIG.entriesListTitle, itemId, payload);
+      } else {
+        const created = await spCreateItem(this, SHAREPOINT_CONFIG.entriesListTitle, payload);
+        this.entryItemIds[itemKey] = created.Id;
+      }
+    },
+    async saveInitialBalance(name, key, value) {
+      const itemId = this.balanceItemIds[name];
+      const payload = {
+        Title: name,
+        [SHAREPOINT_CONFIG.fields.team]: getEmployeeByName(name)?.team || "",
+        [SHAREPOINT_CONFIG.fields.cpInitial]: state.initialBalances[name].CP,
+        [SHAREPOINT_CONFIG.fields.rttInitial]: state.initialBalances[name].RTT,
+        [SHAREPOINT_CONFIG.fields.frInitial]: state.initialBalances[name].FR
+      };
+
+      if (itemId) {
+        await spUpdateItem(this, SHAREPOINT_CONFIG.balancesListTitle, itemId, payload);
+      } else {
+        const created = await spCreateItem(this, SHAREPOINT_CONFIG.balancesListTitle, payload);
+        this.balanceItemIds[name] = created.Id;
+      }
+    },
+    async clearMonth(monthKey) {
+      const prefixes = employees.map((e) => ({ name: e.name, datePrefix: `${monthKey}-` }));
+      for (const prefix of prefixes) {
+        for (let day = 1; day <= 31; day += 1) {
+          const dateKey = `${prefix.datePrefix}${String(day).padStart(2, "0")}`;
+          const itemKey = getEntryKey(prefix.name, dateKey);
+          const itemId = this.entryItemIds[itemKey];
+          if (itemId) {
+            await spDeleteItem(this, SHAREPOINT_CONFIG.entriesListTitle, itemId);
+            delete this.entryItemIds[itemKey];
+          }
+        }
+      }
+    }
+  };
+
+  await spEnsureLists(provider);
+
+  const currentUser = await spGet(provider, "_api/web/currentuser?$select=Title,Email,IsSiteAdmin");
+  provider.currentUser = currentUser.Email || currentUser.Title || "";
+  if (currentUser.IsSiteAdmin) {
+    provider.canEdit = true;
+  } else {
+    const groups = await spGet(provider, "_api/web/currentuser/groups?$select=Title");
+    const groupNames = (groups.value || []).map((group) => group.Title);
+    provider.canEdit = groupNames.includes(SHAREPOINT_CONFIG.editorGroupName);
+  }
+
+  return provider;
+}
+
+async function persistSnapshot() {
+  if (appContext.provider?.mode !== "sharepoint") {
+    await appContext.provider.saveSnapshot(state);
+  }
+}
+
+function startBackgroundSync() {
+  if (appContext.provider?.mode !== "jsonbin") {
+    return;
+  }
+
+  setInterval(() => {
+    void refreshStateFromSharedStore();
+  }, SHARED_SYNC_INTERVAL_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      void refreshStateFromSharedStore();
+    }
+  });
+}
+
+async function refreshStateFromSharedStore() {
+  if (appContext.provider?.mode !== "jsonbin") {
+    return;
+  }
+
+  try {
+    const next = await appContext.provider.loadState();
+    const currentSerialized = JSON.stringify(state);
+    const nextSerialized = JSON.stringify(next);
+    if (currentSerialized === nextSerialized) {
+      return;
+    }
+
+    state = next;
+    renderPlanning();
+    renderAnnual();
+  } catch (error) {
+    console.warn("Synchronisation JSONbin impossible", error);
+  }
+}
+
+async function persistAbsenceChange(name, day, code) {
+  const dateKey = `${selectedMonth}-${String(day).padStart(2, "0")}`;
+  if (appContext.provider?.mode === "sharepoint") {
+    await appContext.provider.saveAbsence(name, dateKey, code);
+    return;
+  }
+  await persistSnapshot();
+}
+
+async function persistInitialBalance(name, key) {
+  if (appContext.provider?.mode === "sharepoint") {
+    await appContext.provider.saveInitialBalance(name, key, state.initialBalances[name][key]);
+    return;
+  }
+  await persistSnapshot();
+}
+
+async function persistClearMonth(monthKey) {
+  if (appContext.provider?.mode === "sharepoint") {
+    await appContext.provider.clearMonth(monthKey);
+    return;
+  }
+  await persistSnapshot();
+}
+
+function getEmployeeByName(name) {
+  return employees.find((employee) => employee.name === name);
+}
+
+function getEntryKey(name, dateKey) {
+  return `${name}|${dateKey}`;
+}
+
+async function spEnsureLists(provider) {
+  await spGet(provider, `_api/web/lists/GetByTitle('${encodeListTitle(SHAREPOINT_CONFIG.balancesListTitle)}')?$select=Title`);
+  await spGet(provider, `_api/web/lists/GetByTitle('${encodeListTitle(SHAREPOINT_CONFIG.entriesListTitle)}')?$select=Title`);
+}
+
+async function spGet(provider, relativeUrl) {
+  const response = await fetch(`${provider.webUrl}/${relativeUrl}`, {
+    headers: {
+      Accept: "application/json;odata=nometadata"
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`SharePoint GET ${relativeUrl} a echoue (${response.status})`);
+  }
+  return response.json();
+}
+
+async function spGetItems(provider, listTitle, fields, query = "$top=5000") {
+  const select = fields.join(",");
+  const response = await spGet(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items?$select=${select}&${query}`);
+  return response.value || [];
+}
+
+async function spCreateItem(provider, listTitle, payload) {
+  const response = await spWrite(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items`, "POST", payload);
+  return response;
+}
+
+async function spUpdateItem(provider, listTitle, itemId, payload) {
+  await spWrite(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items(${itemId})`, "MERGE", payload);
+}
+
+async function spDeleteItem(provider, listTitle, itemId) {
+  await spWrite(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items(${itemId})`, "DELETE");
+}
+
+async function spWrite(provider, relativeUrl, method, payload) {
+  const digest = await spGetDigest(provider);
+  const headers = {
+    Accept: "application/json;odata=nometadata",
+    "Content-Type": "application/json;odata=nometadata",
+    "X-RequestDigest": digest,
+    "IF-MATCH": "*"
+  };
+  if (method === "MERGE" || method === "DELETE") {
+    headers["X-HTTP-Method"] = method;
+  }
+
+  const response = await fetch(`${provider.webUrl}/${relativeUrl}`, {
+    method: method === "POST" ? "POST" : "POST",
+    headers,
+    body: payload ? JSON.stringify(payload) : undefined
+  });
+
+  if (!response.ok) {
+    throw new Error(`SharePoint ${method} ${relativeUrl} a echoue (${response.status})`);
+  }
+
+  if (response.status === 204) {
+    return {};
+  }
+  return response.json();
+}
+
+async function spGetDigest(provider) {
+  const now = Date.now();
+  if (provider.digestValue && provider.digestExpiresAt > now) {
+    return provider.digestValue;
+  }
+
+  const response = await fetch(`${provider.webUrl}/_api/contextinfo`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json;odata=nometadata"
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Impossible de recuperer le digest SharePoint (${response.status})`);
+  }
+  const json = await response.json();
+  provider.digestValue = json.FormDigestValue;
+  provider.digestExpiresAt = now + (json.FormDigestTimeoutSeconds - 30) * 1000;
+  return provider.digestValue;
+}
+
+function encodeListTitle(listTitle) {
+  return listTitle.replaceAll("'", "''");
+}
+
+function setupPicker() {
+  const picker = document.getElementById("codePicker");
+  picker.innerHTML = "";
+  for (const c of codes) {
+    const div = document.createElement("div");
+    div.className = "picker-opt";
+    div.dataset.code = c.code;
+    div.textContent = c.code || "\u2014";
+    if (c.code && codeColorClass[c.code]) {
+      div.classList.add(codeColorClass[c.code]);
+    }
+    div.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!appContext.canEdit) {
+        closePicker();
+        return;
+      }
+      const empName = picker.dataset.name;
+      const day = picker.dataset.day;
+      const code = c.code;
+      if (!code) {
+        delete state.data[empName][selectedMonth][day];
+      } else {
+        state.data[empName][selectedMonth][day] = code;
+      }
+      void persistAbsenceChange(empName, day, code);
+      closePicker();
+      renderPlanning();
+      renderAnnual();
+    });
+    picker.appendChild(div);
+  }
+}
+
+function openPicker(td, name, day) {
+  if (!appContext.canEdit) {
+    return;
+  }
+  const picker = document.getElementById("codePicker");
+  picker.dataset.name = name;
+  picker.dataset.day = String(day);
+  const rect = td.getBoundingClientRect();
+  let left = rect.left + window.scrollX;
+  let top = rect.bottom + window.scrollY + 2;
+  picker.style.display = "grid";
+  const pw = picker.offsetWidth || 220;
+  if (left + pw > window.innerWidth - 8) {
+    left = window.innerWidth - pw - 8;
+  }
+  picker.style.left = left + "px";
+  picker.style.top = top + "px";
+}
+
+function closePicker() {
+  const picker = document.getElementById("codePicker");
+  if (picker) picker.style.display = "none";
+}
+
+function createEmptyState() {
+  const data = {};
+  const initialBalances = {};
+  for (const employee of employees) {
+    const name = employee.name;
+    const teamInitial = defaultInitialByTeam[employee.team] || defaultInitialByTeam.N1;
+    data[name] = {};
+    initialBalances[name] = { ...teamInitial };
+    for (const month of monthDefs) {
+      data[name][month.key] = {};
+    }
+  }
+  return { data, initialBalances };
+}
+
+function ensureStateShape(input) {
+  const next = createEmptyState();
+  if (!input || typeof input !== "object" || !input.data) {
+    return next;
+  }
+
+  for (const employee of employees) {
+    const name = employee.name;
+    if (!input.data[name]) {
+      continue;
+    }
+    for (const month of monthDefs) {
+      const monthData = input.data[name][month.key];
+      if (!monthData || typeof monthData !== "object") {
+        continue;
+      }
+      next.data[name][month.key] = { ...monthData };
+    }
+
+    if (input.initialBalances && input.initialBalances[name]) {
+      const src = input.initialBalances[name];
+      if (typeof src.CP === "number") {
+        next.initialBalances[name].CP = src.CP;
+      }
+      if (typeof src.reliquatCP === "number") {
+        next.initialBalances[name].reliquatCP = src.reliquatCP;
+      }
+      if (typeof src.reliquatRTT === "number") {
+        next.initialBalances[name].reliquatRTT = src.reliquatRTT;
+      }
+    }
+  }
+  return next;
+}
+
+function renderLegend() {
+  legend.innerHTML = "";
+  for (const entry of codes.filter((c) => c.code)) {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    item.textContent = `${entry.code}: ${entry.label}`;
+    legend.appendChild(item);
+  }
+}
+
+function renderMonthSelect() {
+  monthSelect.innerHTML = "";
+  for (const month of monthDefs) {
+    const option = document.createElement("option");
+    option.value = month.key;
+    option.textContent = month.label;
+    monthSelect.appendChild(option);
+  }
+  monthSelect.value = selectedMonth;
+}
+
+function renderPlanning() {
+  const [yearText, monthText] = selectedMonth.split("-");
+  const year = Number(yearText);
+  const monthIndex = Number(monthText) - 1;
+  const days = getDaysInMonth(year, monthIndex);
+
+  planningTable.innerHTML = "";
+  planningTable.classList.add("compact");
+
+  const thead = document.createElement("thead");
+  const row1 = document.createElement("tr");
+  row1.innerHTML = [
+    '<th class="sticky name">Collaborateur</th>',
+    '<th class="sticky-2">Equipe</th>'
+  ].join("");
+
+  for (let day = 1; day <= days; day += 1) {
+    const date = new Date(year, monthIndex, day);
+    const dayType = getDayType(date);
+    row1.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${day}</th>`;
+  }
+
+  row1.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>FR</th>", "<th>PM</th>", "<th>MAL</th>"].join("");
+
+  const row2 = document.createElement("tr");
+  row2.innerHTML = '<th class="sticky name"></th><th class="sticky-2"></th>';
+  for (let day = 1; day <= days; day += 1) {
+    const date = new Date(year, monthIndex, day);
+    const dayType = getDayType(date);
+    row2.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
+  }
+  row2.innerHTML += '<th colspan="7"></th>';
+
+  thead.appendChild(row1);
+  thead.appendChild(row2);
+  planningTable.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+
+  for (const team of teams) {
+    const teamRow = document.createElement("tr");
+    teamRow.className = "team-separator";
+    teamRow.innerHTML = `<td class="sticky name">-- SUPPORT ${team} --</td><td class="sticky-2"></td><td colspan="${7 + days}"></td>`;
+    tbody.appendChild(teamRow);
+
+    const teamMembers = employees.filter((e) => e.team === team);
+    for (let empIdx = 0; empIdx < teamMembers.length; empIdx += 1) {
+      const employee = teamMembers[empIdx];
+      const name = employee.name;
+      const tr = document.createElement("tr");
+      tr.dataset.employee = name;
+      tr.className = `team-member team-${employee.team.toLowerCase()} ${empIdx % 2 === 0 ? "row-even" : "row-odd"}`;
+
+      tr.innerHTML = `
+        <td class="sticky name">${name}</td>
+        <td class="sticky-2">${employee.team}</td>
+      `;
+
+      for (let day = 1; day <= days; day += 1) {
+        const date = new Date(year, monthIndex, day);
+        const dayType = getDayType(date);
+        const td = document.createElement("td");
+        td.className = "day-cell";
+        if (dayType.isSaturday) td.classList.add("saturday");
+        if (dayType.isSunday) td.classList.add("sunday");
+        if (dayType.isHoliday) {
+          td.classList.add("holiday");
+          td.title = dayType.title;
+        }
+
+        const current = state.data[name][selectedMonth][String(day)] || "";
+        applyCodeColor(td, current);
+
+        const chip = document.createElement("div");
+        chip.className = "code-chip";
+        chip.textContent = current;
+        td.appendChild(chip);
+
+        if (dayType.isWorkingDay) {
+          td.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openPicker(td, name, day);
+          });
+          td.style.cursor = appContext.canEdit ? "pointer" : "default";
+        }
+        tr.appendChild(td);
+      }
+
+      appendTotalsCells(tr);
+      updateTotalsForRow(tr, name);
+      tbody.appendChild(tr);
+    }
+
+    tbody.appendChild(createPresenceRow(teamMembers, selectedMonth, year, monthIndex, days, `Presents ${team}`));
+  }
+
+  tbody.appendChild(createPresenceRow(employees, selectedMonth, year, monthIndex, days, "Presents Global"));
+
+  planningTable.appendChild(tbody);
+}
+
+function applyCodeColor(td, code) {
+  td.classList.remove("code-green", "code-orange", "code-purple", "code-blue", "code-teal", "code-red", "code-gray", "code-slate");
+  if (code && codeColorClass[code]) {
+    td.classList.add(codeColorClass[code]);
+  }
+}
+
+function appendTotalsCells(row) {
+  const totals = ["CP", "RTT", "CSS", "FAM", "FR", "PM", "MAL"];
+  for (const bucket of totals) {
+    const td = document.createElement("td");
+    td.className = "totals";
+    td.dataset.total = bucket;
+    td.textContent = "0";
+    row.appendChild(td);
+  }
+}
+
+function createPresenceRow(members, monthKey, year, monthIndex, days, label) {
+  const tr = document.createElement("tr");
+  tr.className = "presence-row";
+  tr.innerHTML = `<td class="sticky name">${label}</td><td class="sticky-2"></td>`;
+
+  for (let day = 1; day <= days; day += 1) {
+    const date = new Date(year, monthIndex, day);
+    const dayType = getDayType(date);
+    const td = document.createElement("td");
+    td.className = "presence-cell";
+    if (dayType.isSaturday) td.classList.add("saturday");
+    if (dayType.isSunday) td.classList.add("sunday");
+    if (dayType.isHoliday) {
+      td.classList.add("holiday");
+      td.title = dayType.title;
+    }
+
+    if (!dayType.isWorkingDay) {
+      td.textContent = "-";
+    } else {
+      let present = 0;
+      for (const member of members) {
+        const code = state.data[member.name][monthKey][String(day)] || "";
+        if (!code) present += 1;
+      }
+      td.textContent = String(present);
+    }
+    tr.appendChild(td);
+  }
+
+  for (let i = 0; i < 7; i += 1) {
+    const td = document.createElement("td");
+    td.className = "presence-cell presence-end";
+    td.textContent = "";
+    tr.appendChild(td);
+  }
+
+  return tr;
+}
+
+function computeMonthTotals(name, monthKey) {
+  const totals = { CP: 0, RTT: 0, CSS: 0, FAM: 0, FR: 0, PM: 0, MAL: 0 };
+  const cells = state.data[name][monthKey];
+
+  for (const value of Object.values(cells)) {
+    if (!value || !codeToWeight[value]) continue;
+    const weight = codeToWeight[value];
+    for (const [bucket, amount] of Object.entries(weight)) {
+      totals[bucket] += amount;
+    }
+  }
+  return totals;
+}
+
+function updateTotalsForRow(row, name) {
+  const totals = computeMonthTotals(name, selectedMonth);
+  for (const [bucket, amount] of Object.entries(totals)) {
+    const td = row.querySelector(`[data-total="${bucket}"]`);
+    if (td) td.textContent = String(amount);
+  }
+}
+
+function computeAnnualTotals(name) {
+  const annual = { CP: 0, RTT: 0, FR: 0, CSS: 0, FAM: 0, PM: 0, MAL: 0 };
+  for (const month of monthDefs) {
+    const monthly = computeMonthTotals(name, month.key);
+    for (const key of Object.keys(annual)) {
+      annual[key] += monthly[key];
+    }
+  }
+  return annual;
+}
+
+function renderAnnual() {
+  annualTable.innerHTML = "";
+
+  const thead = document.createElement("thead");
+  const hr = document.createElement("tr");
+  hr.innerHTML = [
+    '<th class="sticky name">Collaborateur</th>',
+    '<th class="sticky-2">Equipe</th>',
+    "<th>Reliquat CP</th>",
+    "<th>Reliquat RTT</th>",
+    "<th>CP Initial</th>",
+    "<th>RTT Initial</th>",
+    "<th>FR Initial</th>",
+    "<th>CP Restant</th>",
+    "<th>RTT Restant</th>",
+    "<th>FR Restant</th>",
+    "<th>CP</th>",
+    "<th>RTT</th>",
+    "<th>FR</th>",
+    "<th>CSS</th>",
+    "<th>FAM</th>",
+    "<th>PM</th>",
+    "<th>MAL</th>"
+  ].join("");
+
+  thead.appendChild(hr);
+  annualTable.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  for (const team of teams) {
+    const teamRow = document.createElement("tr");
+    teamRow.className = "team-separator";
+    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td colspan="15"></td>';
+    tbody.appendChild(teamRow);
+
+    const teamMembers = employees.filter((e) => e.team === team);
+    for (let empIdx = 0; empIdx < teamMembers.length; empIdx += 1) {
+      const employee = teamMembers[empIdx];
+      const name = employee.name;
+      const a = computeAnnualTotals(name);
+      const initial = state.initialBalances[name];
+      const tr = document.createElement("tr");
+      tr.className = empIdx % 2 === 0 ? "row-even" : "row-odd";
+      const disabledAttr = appContext.canEdit ? "" : "disabled";
+      tr.innerHTML = `
+        <td class="sticky name">${name}</td>
+        <td class="sticky-2">${employee.team}</td>
+        <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="reliquatCP" data-employee="${name}" value="${initial.reliquatCP}" ${disabledAttr}></td>
+        <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="reliquatRTT" data-employee="${name}" value="${initial.reliquatRTT}" ${disabledAttr}></td>
+        <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="CP" data-employee="${name}" value="${initial.CP}" ${disabledAttr}></td>
+        <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="RTT" data-employee="${name}" value="${initial.RTT}" ${disabledAttr}></td>
+        <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="FR" data-employee="${name}" value="${initial.FR}" ${disabledAttr}></td>
+        <td>${round2(initial.reliquatCP + initial.CP - a.CP)}</td>
+        <td>${round2(initial.reliquatRTT + initial.RTT - a.RTT)}</td>
+        <td>${round2(initial.FR - a.FR)}</td>
+        <td>${a.CP}</td>
+        <td>${a.RTT}</td>
+        <td>${a.FR}</td>
+        <td>${a.CSS}</td>
+        <td>${a.FAM}</td>
+        <td>${a.PM}</td>
+        <td>${a.MAL}</td>
+      `;
+
+      tr.querySelectorAll("[data-initial]").forEach((input) => {
+        input.addEventListener("change", (event) => {
+          if (!appContext.canEdit) return;
+          const key = event.target.dataset.initial;
+          const employeeName = event.target.dataset.employee;
+          const parsed = Number(event.target.value);
+          state.initialBalances[employeeName][key] = Number.isFinite(parsed) ? parsed : 0;
+          void persistInitialBalance(employeeName, key);
+          renderPlanning();
+          renderAnnual();
+        });
+      });
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  annualTable.appendChild(tbody);
+}
+
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}
+
+function getDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function getDayType(date) {
+  const dow = date.getDay();
+  const isSaturday = dow === 6;
+  const isSunday = dow === 0;
+  const dateKey = getDateKey(date);
+  const holidayName = holidays[dateKey] || "";
+  const isHoliday = Boolean(holidayName);
+
+  const classes = [];
+  if (isSaturday) classes.push("saturday");
+  if (isSunday) classes.push("sunday");
+  if (isHoliday) classes.push("holiday");
+
+  const titleParts = [];
+  if (isSaturday) titleParts.push("Samedi");
+  if (isSunday) titleParts.push("Dimanche");
+  if (isHoliday) titleParts.push(`Ferie: ${holidayName}`);
+
+  return {
+    isSaturday,
+    isSunday,
+    isHoliday,
+    isWorkingDay: !isSaturday && !isSunday && !isHoliday,
+    headerClass: classes.join(" "),
+    title: titleParts.join(" | ")
+  };
+}
+
+function getDaysInMonth(year, monthIndex) {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+async function clearCurrentMonth() {
+  if (!appContext.canEdit) return;
+  const isConfirmed = window.confirm("Confirmer la suppression des codes pour le mois courant ?");
+  if (!isConfirmed) return;
+
+  for (const employee of employees) {
+    const name = employee.name;
+    state.data[name][selectedMonth] = {};
+  }
+  await persistClearMonth(selectedMonth);
+  renderPlanning();
+  renderAnnual();
+}
+
+function exportCurrentMonthToCsv() {
+  const [yearText, monthText] = selectedMonth.split("-");
+  const year = Number(yearText);
+  const monthIndex = Number(monthText) - 1;
+  const days = getDaysInMonth(year, monthIndex);
+
+  const headers = ["Collaborateur", "Equipe", "CP Initial", "RTT Initial", "FR Initial"];
+  for (let day = 1; day <= days; day += 1) {
+    headers.push(String(day));
+  }
+  headers.push("CP", "RTT", "CSS", "FAM", "FR", "PM", "MAL");
+
+  const rows = [headers];
+  for (const employee of employees) {
+    const name = employee.name;
+    const initial = state.initialBalances[name];
+    const totals = computeMonthTotals(name, selectedMonth);
+    const row = [name, employee.team, initial.CP, initial.RTT, initial.FR];
+    for (let day = 1; day <= days; day += 1) {
+      row.push(state.data[name][selectedMonth][String(day)] || "");
+    }
+    row.push(totals.CP, totals.RTT, totals.CSS, totals.FAM, totals.FR, totals.PM, totals.MAL);
+    rows.push(row);
+  }
+
+  const csv = rows
+    .map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(";"))
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `planning-${selectedMonth}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+    </script>
+  </body>
+</html>
