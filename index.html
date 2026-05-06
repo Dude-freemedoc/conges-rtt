@@ -760,6 +760,7 @@ hr {
 
     <script>
 const STORAGE_KEY = "gestion-conges-v1";
+const SHARED_CACHE_KEY = "gestion-conges-shared-cache-v1";
 const SHARED_SYNC_INTERVAL_MS = 10000;
 
 // ── Configuration JSONbin.io ──────────────────────────────────────────────────
@@ -947,6 +948,8 @@ async function init() {
   renderLegend();
   renderMonthSelect();
   setupPicker();
+  renderPlanning();
+  renderAnnual();
 
   monthSelect.addEventListener("change", () => {
     selectedMonth = monthSelect.value;
@@ -984,12 +987,23 @@ async function init() {
 async function bootstrapDataProvider() {
   loadEmployeesFromStorage();
 
+  const cachedSharedState = loadCachedSharedState();
+  if (cachedSharedState) {
+    state = cachedSharedState;
+    appContext.statusTone = "";
+    appContext.statusMessage = "Chargement des données partagées...";
+    syncUiState();
+    renderPlanning();
+    renderAnnual();
+  }
+
   try {
     appContext.provider = await createDataProvider();
     appContext.mode = appContext.provider.mode;
     appContext.canEdit = appContext.provider.canEdit;
     appContext.currentUser = appContext.provider.currentUser || "";
     state = await appContext.provider.loadState();
+    saveCachedSharedState(state);
 
     if (appContext.provider.mode === "jsonbin") {
       appContext.statusTone = "";
@@ -1067,6 +1081,27 @@ function loadEmployeesFromStorage() {
     }
   } catch (e) {
     console.error("Impossible de charger les collaborateurs", e);
+  }
+}
+
+function loadCachedSharedState() {
+  try {
+    const raw = localStorage.getItem(SHARED_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+    return ensureStateShape(JSON.parse(raw));
+  } catch (e) {
+    console.warn("Cache partagé invalide, reinitialisation", e);
+    return null;
+  }
+}
+
+function saveCachedSharedState(nextState) {
+  try {
+    localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(nextState));
+  } catch (e) {
+    console.warn("Impossible de sauvegarder le cache partagé", e);
   }
 }
 
@@ -1315,6 +1350,7 @@ async function createJsonbinProvider() {
 
 async function persistSnapshot() {
   await appContext.provider.saveSnapshot(state);
+  saveCachedSharedState(state);
 }
 
 function startBackgroundSync() {
@@ -1347,6 +1383,7 @@ async function refreshStateFromSharedStore() {
     }
 
     state = next;
+    saveCachedSharedState(state);
     renderPlanning();
     renderAnnual();
   } catch (error) {
