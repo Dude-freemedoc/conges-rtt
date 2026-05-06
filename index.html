@@ -715,7 +715,7 @@ hr {
 
       <section class="card">
         <h2>Planning mensuel</h2>
-        <div class="table-wrap no-scroll">
+        <div class="table-wrap">
           <table id="planningTable"></table>
         </div>
       </section>
@@ -891,23 +891,6 @@ const cancelEditBtn = document.getElementById("cancelEditBtn");
 const employeeListContainer = document.getElementById("employeeListContainer");
 
 let editingEmployeeIndex = -1;
-
-const SHAREPOINT_CONFIG = {
-  balancesListTitle: "CongesCollaborateurs",
-  entriesListTitle: "CongesSaisies",
-  editorGroupName: "Modificateurs Conges",
-  defaultFolderRelativeUrl: "/Shared Documents/General/CONGES/2026-2027",
-  fields: {
-    team: "Team",
-    employeeName: "EmployeeName",
-    absenceDate: "AbsenceDate",
-    absenceCode: "AbsenceCode",
-    cpInitial: "CPInitial",
-    rttInitial: "RTTInitial",
-    frInitial: "FRInitial"
-  }
-};
-
 let state = createEmptyState();
 let selectedMonth = monthDefs[0].key;
 let editorKey = null;
@@ -1008,22 +991,17 @@ async function bootstrapDataProvider() {
     appContext.currentUser = appContext.provider.currentUser || "";
     state = await appContext.provider.loadState();
 
-    if (appContext.provider.mode === "sharepoint") {
-      appContext.statusTone = appContext.canEdit ? "" : "readonly";
-      appContext.statusMessage = appContext.canEdit
-        ? `Mode SharePoint actif. Utilisateur: ${appContext.currentUser || "inconnu"}.`
-        : `Mode SharePoint en lecture seule. Utilisateur: ${appContext.currentUser || "inconnu"}.`;
-    } else if (appContext.provider.mode === "netlify") {
+    if (appContext.provider.mode === "jsonbin") {
       appContext.statusTone = "";
       if (appContext.canEdit) {
-        appContext.statusMessage = "Mode collaboratif Netlify actif (ÉDITEUR). Synchronisation automatique toutes les 10 secondes.";
+        appContext.statusMessage = "Mode collaboratif actif (ÉDITEUR). Les modifications sont partagées et synchronisées automatiquement toutes les 10 secondes.";
       } else {
         appContext.statusTone = "readonly";
-        appContext.statusMessage = "Mode collaboratif Netlify actif (LECTEUR). Consultation seule. Synchronisation automatique toutes les 10 secondes.";
+        appContext.statusMessage = "Mode collaboratif actif (LECTEUR). Consultation seule. Synchronisation automatique toutes les 10 secondes.";
       }
     } else {
       appContext.statusTone = "";
-      appContext.statusMessage = "Mode local actif. Les donnees restent dans ce navigateur tant que SharePoint n'est pas configure.";
+      appContext.statusMessage = "Mode local actif. Les données restent dans ce navigateur uniquement.";
     }
   } catch (error) {
     console.error("Initialisation impossible", error);
@@ -1032,7 +1010,7 @@ async function bootstrapDataProvider() {
     appContext.canEdit = true;
     state = await appContext.provider.loadState();
     appContext.statusTone = "error";
-    appContext.statusMessage = "Echec de l'initialisation SharePoint. Repli en mode local.";
+    appContext.statusMessage = "Echec de la connexion au stockage partagé. Les données restent locales dans ce navigateur.";
   }
 
   syncUiState();
@@ -1044,10 +1022,6 @@ function syncUiState() {
   appStatus.textContent = appContext.statusMessage;
   appStatus.className = `app-status ${appContext.statusTone}`.trim();
   clearMonthBtn.disabled = !appContext.canEdit;
-}
-
-function detectSharePointContext() {
-  return Boolean(window._spPageContextInfo) || /\.sharepoint\.com$/i.test(window.location.hostname);
 }
 
 function detectJsonbinContext() {
@@ -1242,20 +1216,6 @@ function deleteEmployee(index) {
   renderAnnual();
 }
 
-function resolveSharePointWebUrl() {
-  if (window._spPageContextInfo?.webAbsoluteUrl) {
-    return window._spPageContextInfo.webAbsoluteUrl;
-  }
-
-  const path = window.location.pathname || "";
-  const siteMatch = path.match(/^\/(:[a-z]:\/r\/)?(sites|teams)\/([^/]+)/i);
-  if (siteMatch) {
-    return `${window.location.origin}/${siteMatch[2]}/${siteMatch[3]}`;
-  }
-
-  return window.location.origin;
-}
-
 function createLocalProvider() {
   return {
     mode: "local",
@@ -1282,14 +1242,6 @@ function createLocalProvider() {
 }
 
 async function createDataProvider() {
-  if (detectSharePointContext()) {
-    try {
-      return await createSharePointProvider();
-    } catch (error) {
-      console.warn("SharePoint indisponible, tentative Netlify puis repli local", error);
-    }
-  }
-
   if (detectJsonbinContext()) {
     try {
       return await createJsonbinProvider();
@@ -1308,13 +1260,13 @@ async function createJsonbinProvider() {
     currentUser: "",
     async loadState() {
       const url = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`;
-      const headers = { "X-Bin-Meta": "false" };
+      const headers = { "X-Bin-Meta": "false", "Cache-Control": "no-cache" };
       if (editorKey) {
         headers["X-Master-Key"] = editorKey;
       } else if (JSONBIN_ACCESS_KEY) {
         headers["X-Access-Key"] = JSONBIN_ACCESS_KEY;
       }
-      const response = await fetch(url, { method: "GET", headers });
+      const response = await fetch(url, { method: "GET", headers, cache: "no-store" });
 
       if (!response.ok) {
         throw new Error(`JSONbin GET échoué (${response.status})`);
@@ -1361,133 +1313,8 @@ async function createJsonbinProvider() {
   return provider;
 }
 
-async function createSharePointProvider() {
-  const webUrl = resolveSharePointWebUrl();
-  const provider = {
-    mode: "sharepoint",
-    canEdit: false,
-    currentUser: "",
-    webUrl,
-    digestValue: "",
-    digestExpiresAt: 0,
-    balanceItemIds: {},
-    entryItemIds: {},
-    async loadState() {
-      const next = createEmptyState();
-      const balances = await spGetItems(this, SHAREPOINT_CONFIG.balancesListTitle, ["Id", "Title", SHAREPOINT_CONFIG.fields.cpInitial, SHAREPOINT_CONFIG.fields.rttInitial, SHAREPOINT_CONFIG.fields.frInitial], "$top=5000");
-      for (const item of balances) {
-        const name = item.Title;
-        if (!next.initialBalances[name]) {
-          continue;
-        }
-        this.balanceItemIds[name] = item.Id;
-        next.initialBalances[name].CP = Number(item[SHAREPOINT_CONFIG.fields.cpInitial] ?? next.initialBalances[name].CP);
-        next.initialBalances[name].RTT = Number(item[SHAREPOINT_CONFIG.fields.rttInitial] ?? next.initialBalances[name].RTT);
-        next.initialBalances[name].FR = Number(item[SHAREPOINT_CONFIG.fields.frInitial] ?? next.initialBalances[name].FR);
-      }
-
-      const entries = await spGetItems(this, SHAREPOINT_CONFIG.entriesListTitle, ["Id", "Title", SHAREPOINT_CONFIG.fields.employeeName, SHAREPOINT_CONFIG.fields.absenceDate, SHAREPOINT_CONFIG.fields.absenceCode], "$top=5000");
-      for (const item of entries) {
-        const name = item[SHAREPOINT_CONFIG.fields.employeeName] || item.Title?.split("|")[0];
-        const rawDate = item[SHAREPOINT_CONFIG.fields.absenceDate] || item.Title?.split("|")[1];
-        const code = item[SHAREPOINT_CONFIG.fields.absenceCode];
-        if (!name || !rawDate || !code || !next.data[name]) {
-          continue;
-        }
-        const dateKey = String(rawDate).slice(0, 10);
-        const monthKey = dateKey.slice(0, 7);
-        const day = String(Number(dateKey.slice(8, 10)));
-        if (!next.data[name][monthKey]) {
-          continue;
-        }
-        next.data[name][monthKey][day] = code;
-        this.entryItemIds[getEntryKey(name, dateKey)] = item.Id;
-      }
-
-      return next;
-    },
-    async saveSnapshot(nextState) {
-      return undefined;
-    },
-    async saveAbsence(name, dateKey, code) {
-      const itemKey = getEntryKey(name, dateKey);
-      const itemId = this.entryItemIds[itemKey];
-
-      if (!code) {
-        if (itemId) {
-          await spDeleteItem(this, SHAREPOINT_CONFIG.entriesListTitle, itemId);
-          delete this.entryItemIds[itemKey];
-        }
-        return;
-      }
-
-      const payload = {
-        Title: itemKey,
-        [SHAREPOINT_CONFIG.fields.employeeName]: name,
-        [SHAREPOINT_CONFIG.fields.absenceDate]: `${dateKey}T00:00:00Z`,
-        [SHAREPOINT_CONFIG.fields.absenceCode]: code,
-        [SHAREPOINT_CONFIG.fields.team]: getEmployeeByName(name)?.team || ""
-      };
-
-      if (itemId) {
-        await spUpdateItem(this, SHAREPOINT_CONFIG.entriesListTitle, itemId, payload);
-      } else {
-        const created = await spCreateItem(this, SHAREPOINT_CONFIG.entriesListTitle, payload);
-        this.entryItemIds[itemKey] = created.Id;
-      }
-    },
-    async saveInitialBalance(name, key, value) {
-      const itemId = this.balanceItemIds[name];
-      const payload = {
-        Title: name,
-        [SHAREPOINT_CONFIG.fields.team]: getEmployeeByName(name)?.team || "",
-        [SHAREPOINT_CONFIG.fields.cpInitial]: state.initialBalances[name].CP,
-        [SHAREPOINT_CONFIG.fields.rttInitial]: state.initialBalances[name].RTT,
-        [SHAREPOINT_CONFIG.fields.frInitial]: state.initialBalances[name].FR
-      };
-
-      if (itemId) {
-        await spUpdateItem(this, SHAREPOINT_CONFIG.balancesListTitle, itemId, payload);
-      } else {
-        const created = await spCreateItem(this, SHAREPOINT_CONFIG.balancesListTitle, payload);
-        this.balanceItemIds[name] = created.Id;
-      }
-    },
-    async clearMonth(monthKey) {
-      const prefixes = employees.map((e) => ({ name: e.name, datePrefix: `${monthKey}-` }));
-      for (const prefix of prefixes) {
-        for (let day = 1; day <= 31; day += 1) {
-          const dateKey = `${prefix.datePrefix}${String(day).padStart(2, "0")}`;
-          const itemKey = getEntryKey(prefix.name, dateKey);
-          const itemId = this.entryItemIds[itemKey];
-          if (itemId) {
-            await spDeleteItem(this, SHAREPOINT_CONFIG.entriesListTitle, itemId);
-            delete this.entryItemIds[itemKey];
-          }
-        }
-      }
-    }
-  };
-
-  await spEnsureLists(provider);
-
-  const currentUser = await spGet(provider, "_api/web/currentuser?$select=Title,Email,IsSiteAdmin");
-  provider.currentUser = currentUser.Email || currentUser.Title || "";
-  if (currentUser.IsSiteAdmin) {
-    provider.canEdit = true;
-  } else {
-    const groups = await spGet(provider, "_api/web/currentuser/groups?$select=Title");
-    const groupNames = (groups.value || []).map((group) => group.Title);
-    provider.canEdit = groupNames.includes(SHAREPOINT_CONFIG.editorGroupName);
-  }
-
-  return provider;
-}
-
 async function persistSnapshot() {
-  if (appContext.provider?.mode !== "sharepoint") {
-    await appContext.provider.saveSnapshot(state);
-  }
+  await appContext.provider.saveSnapshot(state);
 }
 
 function startBackgroundSync() {
@@ -1529,26 +1356,14 @@ async function refreshStateFromSharedStore() {
 
 async function persistAbsenceChange(name, day, code) {
   const dateKey = `${selectedMonth}-${String(day).padStart(2, "0")}`;
-  if (appContext.provider?.mode === "sharepoint") {
-    await appContext.provider.saveAbsence(name, dateKey, code);
-    return;
-  }
   await persistSnapshot();
 }
 
 async function persistInitialBalance(name, key) {
-  if (appContext.provider?.mode === "sharepoint") {
-    await appContext.provider.saveInitialBalance(name, key, state.initialBalances[name][key]);
-    return;
-  }
   await persistSnapshot();
 }
 
 async function persistClearMonth(monthKey) {
-  if (appContext.provider?.mode === "sharepoint") {
-    await appContext.provider.clearMonth(monthKey);
-    return;
-  }
   await persistSnapshot();
 }
 
@@ -1558,95 +1373,6 @@ function getEmployeeByName(name) {
 
 function getEntryKey(name, dateKey) {
   return `${name}|${dateKey}`;
-}
-
-async function spEnsureLists(provider) {
-  await spGet(provider, `_api/web/lists/GetByTitle('${encodeListTitle(SHAREPOINT_CONFIG.balancesListTitle)}')?$select=Title`);
-  await spGet(provider, `_api/web/lists/GetByTitle('${encodeListTitle(SHAREPOINT_CONFIG.entriesListTitle)}')?$select=Title`);
-}
-
-async function spGet(provider, relativeUrl) {
-  const response = await fetch(`${provider.webUrl}/${relativeUrl}`, {
-    headers: {
-      Accept: "application/json;odata=nometadata"
-    }
-  });
-  if (!response.ok) {
-    throw new Error(`SharePoint GET ${relativeUrl} a echoue (${response.status})`);
-  }
-  return response.json();
-}
-
-async function spGetItems(provider, listTitle, fields, query = "$top=5000") {
-  const select = fields.join(",");
-  const response = await spGet(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items?$select=${select}&${query}`);
-  return response.value || [];
-}
-
-async function spCreateItem(provider, listTitle, payload) {
-  const response = await spWrite(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items`, "POST", payload);
-  return response;
-}
-
-async function spUpdateItem(provider, listTitle, itemId, payload) {
-  await spWrite(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items(${itemId})`, "MERGE", payload);
-}
-
-async function spDeleteItem(provider, listTitle, itemId) {
-  await spWrite(provider, `_api/web/lists/GetByTitle('${encodeListTitle(listTitle)}')/items(${itemId})`, "DELETE");
-}
-
-async function spWrite(provider, relativeUrl, method, payload) {
-  const digest = await spGetDigest(provider);
-  const headers = {
-    Accept: "application/json;odata=nometadata",
-    "Content-Type": "application/json;odata=nometadata",
-    "X-RequestDigest": digest,
-    "IF-MATCH": "*"
-  };
-  if (method === "MERGE" || method === "DELETE") {
-    headers["X-HTTP-Method"] = method;
-  }
-
-  const response = await fetch(`${provider.webUrl}/${relativeUrl}`, {
-    method: method === "POST" ? "POST" : "POST",
-    headers,
-    body: payload ? JSON.stringify(payload) : undefined
-  });
-
-  if (!response.ok) {
-    throw new Error(`SharePoint ${method} ${relativeUrl} a echoue (${response.status})`);
-  }
-
-  if (response.status === 204) {
-    return {};
-  }
-  return response.json();
-}
-
-async function spGetDigest(provider) {
-  const now = Date.now();
-  if (provider.digestValue && provider.digestExpiresAt > now) {
-    return provider.digestValue;
-  }
-
-  const response = await fetch(`${provider.webUrl}/_api/contextinfo`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json;odata=nometadata"
-    }
-  });
-  if (!response.ok) {
-    throw new Error(`Impossible de recuperer le digest SharePoint (${response.status})`);
-  }
-  const json = await response.json();
-  provider.digestValue = json.FormDigestValue;
-  provider.digestExpiresAt = now + (json.FormDigestTimeoutSeconds - 30) * 1000;
-  return provider.digestValue;
-}
-
-function encodeListTitle(listTitle) {
-  return listTitle.replaceAll("'", "''");
 }
 
 function setupPicker() {
@@ -1705,77 +1431,6 @@ function openPicker(td, name, day) {
 function closePicker() {
   const picker = document.getElementById("codePicker");
   if (picker) picker.style.display = "none";
-}
-
-function createEmptyState() {
-  const data = {};
-  const initialBalances = {};
-  for (const employee of employees) {
-    const name = employee.name;
-    const teamInitial = defaultInitialByTeam[employee.team] || defaultInitialByTeam.N1;
-    data[name] = {};
-    initialBalances[name] = { ...teamInitial };
-    for (const month of monthDefs) {
-      data[name][month.key] = {};
-    }
-  }
-  return { data, initialBalances };
-}
-
-function ensureStateShape(input) {
-  const next = createEmptyState();
-  if (!input || typeof input !== "object" || !input.data) {
-    return next;
-  }
-
-  for (const employee of employees) {
-    const name = employee.name;
-    if (!input.data[name]) {
-      continue;
-    }
-    for (const month of monthDefs) {
-      const monthData = input.data[name][month.key];
-      if (!monthData || typeof monthData !== "object") {
-        continue;
-      }
-      next.data[name][month.key] = { ...monthData };
-    }
-
-    if (input.initialBalances && input.initialBalances[name]) {
-      const src = input.initialBalances[name];
-      if (typeof src.CP === "number") {
-        next.initialBalances[name].CP = src.CP;
-      }
-      if (typeof src.reliquatCP === "number") {
-        next.initialBalances[name].reliquatCP = src.reliquatCP;
-      }
-      if (typeof src.reliquatRTT === "number") {
-        next.initialBalances[name].reliquatRTT = src.reliquatRTT;
-      }
-    }
-  }
-  return next;
-}
-
-function renderLegend() {
-  legend.innerHTML = "";
-  for (const entry of codes.filter((c) => c.code)) {
-    const item = document.createElement("div");
-    item.className = "legend-item";
-    item.textContent = `${entry.code}: ${entry.label}`;
-    legend.appendChild(item);
-  }
-}
-
-function renderMonthSelect() {
-  monthSelect.innerHTML = "";
-  for (const month of monthDefs) {
-    const option = document.createElement("option");
-    option.value = month.key;
-    option.textContent = month.label;
-    monthSelect.appendChild(option);
-  }
-  monthSelect.value = selectedMonth;
 }
 
 function renderPlanning() {
