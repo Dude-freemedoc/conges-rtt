@@ -1752,6 +1752,83 @@ function getDaysInMonth(year, monthIndex) {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
+function createEmptyState() {
+  const data = {};
+  const initialBalances = {};
+  for (const employee of employees) {
+    const name = employee.name;
+    const teamInitial = defaultInitialByTeam[employee.team] || defaultInitialByTeam.N1;
+    data[name] = {};
+    initialBalances[name] = { ...teamInitial };
+    for (const month of monthDefs) {
+      data[name][month.key] = {};
+    }
+  }
+  return { data, initialBalances };
+}
+
+function ensureStateShape(input) {
+  const next = createEmptyState();
+  if (!input || typeof input !== "object" || !input.data) {
+    return next;
+  }
+
+  for (const employee of employees) {
+    const name = employee.name;
+    if (!input.data[name]) {
+      continue;
+    }
+    for (const month of monthDefs) {
+      const monthData = input.data[name][month.key];
+      if (!monthData || typeof monthData !== "object") {
+        continue;
+      }
+      next.data[name][month.key] = { ...monthData };
+    }
+
+    if (input.initialBalances && input.initialBalances[name]) {
+      const src = input.initialBalances[name];
+      if (typeof src.CP === "number") {
+        next.initialBalances[name].CP = src.CP;
+      }
+      if (typeof src.reliquatCP === "number") {
+        next.initialBalances[name].reliquatCP = src.reliquatCP;
+      }
+      if (typeof src.reliquatRTT === "number") {
+        next.initialBalances[name].reliquatRTT = src.reliquatRTT;
+      }
+      if (typeof src.RTT === "number") {
+        next.initialBalances[name].RTT = src.RTT;
+      }
+      if (typeof src.FR === "number") {
+        next.initialBalances[name].FR = src.FR;
+      }
+    }
+  }
+  return next;
+}
+
+function renderLegend() {
+  legend.innerHTML = "";
+  for (const entry of codes.filter((c) => c.code)) {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    item.textContent = `${entry.code}: ${entry.label}`;
+    legend.appendChild(item);
+  }
+}
+
+function renderMonthSelect() {
+  monthSelect.innerHTML = "";
+  for (const month of monthDefs) {
+    const option = document.createElement("option");
+    option.value = month.key;
+    option.textContent = month.label;
+    monthSelect.appendChild(option);
+  }
+  monthSelect.value = selectedMonth;
+}
+
 async function clearCurrentMonth() {
   if (!appContext.canEdit) return;
   const isConfirmed = window.confirm("Confirmer la suppression des codes pour le mois courant ?");
