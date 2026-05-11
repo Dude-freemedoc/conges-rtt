@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestion Conges et RTT</title>
+    <title>Gestion Congés et RTT</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -180,17 +180,46 @@ button.danger {
 
 .legend {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 8px;
 }
 
 .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.8rem;
-  border: 1px dashed var(--line);
+  font-size: 0.78rem;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 6px 8px;
-  background: #ffffffa8;
+  padding: 6px 10px;
+  background: #ffffffcc;
+}
+
+.legend-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.72rem;
+}
+
+.legend-badge.code-green  { background: #70AD47; }
+.legend-badge.code-orange { background: #ED7D31; }
+.legend-badge.code-purple { background: #9B59B6; }
+.legend-badge.code-blue   { background: #3498DB; }
+.legend-badge.code-teal   { background: #1ABC9C; }
+.legend-badge.code-red    { background: #FF0000; }
+.legend-badge.code-gray   { background: #9E9E9E; }
+.legend-badge.code-slate  { background: #78909C; }
+
+.legend-label {
+  color: var(--ink);
 }
 
 .table-wrap {
@@ -281,14 +310,23 @@ td.day-cell select {
   text-align: right;
 }
 
-td.code-green  { background: #70AD47 !important; }
-td.code-orange { background: #ED7D31 !important; }
-td.code-purple { background: #9B59B6 !important; }
-td.code-blue   { background: #3498DB !important; }
-td.code-teal   { background: #1ABC9C !important; }
-td.code-red    { background: #FF0000 !important; }
-td.code-gray   { background: #9E9E9E !important; }
-td.code-slate  { background: #78909C !important; }
+td.code-green  { background: #70AD47 !important; color: #fff !important; }
+td.code-orange { background: #ED7D31 !important; color: #fff !important; }
+td.code-purple { background: #9B59B6 !important; color: #fff !important; }
+td.code-blue   { background: #3498DB !important; color: #fff !important; }
+td.code-teal   { background: #1ABC9C !important; color: #fff !important; }
+td.code-red    { background: #FF0000 !important; color: #fff !important; }
+td.code-gray   { background: #9E9E9E !important; color: #fff !important; }
+td.code-slate  { background: #78909C !important; color: #fff !important; }
+
+.code-chip-half.code-green  { background: #70AD47; color: #fff; }
+.code-chip-half.code-orange { background: #ED7D31; color: #fff; }
+.code-chip-half.code-purple { background: #9B59B6; color: #fff; }
+.code-chip-half.code-blue   { background: #3498DB; color: #fff; }
+.code-chip-half.code-teal   { background: #1ABC9C; color: #fff; }
+.code-chip-half.code-red    { background: #FF0000; color: #fff; }
+.code-chip-half.code-gray   { background: #9E9E9E; color: #fff; }
+.code-chip-half.code-slate  { background: #78909C; color: #fff; }
 
 td.code-green select,
 td.code-orange select,
@@ -440,6 +478,50 @@ td.presence-cell.presence-end {
 td.day-cell {
   padding: 1px !important;
   line-height: 1;
+  position: relative;
+  overflow: hidden;
+  height: 20px;
+}
+
+td.day-cell.half-day {
+  padding: 0 !important;
+}
+
+.code-chip-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.code-chip-half.top {
+  top: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.code-chip-half.bottom {
+  bottom: 0;
+}
+
+.code-chip {
+  display: block;
+  width: 100%;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .code-picker {
@@ -449,11 +531,41 @@ td.day-cell {
   border: 1px solid #bcd;
   border-radius: 10px;
   box-shadow: 0 8px 24px #00000033;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  display: block;
+  gap: 6px;
   padding: 8px;
-  min-width: 210px;
+  min-width: 280px;
+}
+
+.picker-duration {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.picker-duration-btn {
+  border-radius: 6px;
+  padding: 5px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid #c9d7e6;
+  background: #f3f7fc;
+  color: #274563;
+}
+
+.picker-duration-btn.active {
+  background: #1e496b;
+  color: #fff;
+  border-color: #1e496b;
+}
+
+.picker-types {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
 }
 
 .picker-opt {
@@ -467,6 +579,12 @@ td.day-cell {
   background: #f8fbf9;
   color: var(--ink);
   transition: transform 80ms;
+}
+
+.picker-opt-clear {
+  background: #f3f6f8;
+  border-color: #cfdae1;
+  color: #30495e;
 }
 
 .picker-opt:hover {
@@ -694,9 +812,9 @@ hr {
     <main class="app-shell">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Planning equipe</p>
-          <h1>Gestion Conges / RTT</h1>
-          <p class="subtitle">Periode Juin 2026 -> Mai 2027</p>
+          <p class="eyebrow">Planning équipe</p>
+          <h1>Gestion Congés / RTT</h1>
+          <p class="subtitle">Période Juin 2026 -> Mai 2027</p>
         </div>
         <div class="toolbar">
           <label>
@@ -721,7 +839,7 @@ hr {
       </section>
 
       <section class="card">
-        <h2>Recap annuel</h2>
+        <h2>Récap annuel</h2>
         <div class="table-wrap no-scroll">
           <table id="annualTable"></table>
         </div>
@@ -776,13 +894,13 @@ const JSONBIN_ACCESS_KEY = "$2a$10$ZBhZnz4ly/b06u2KC8ly3uJalID..HIv8ac/qqwj7/4Pn
 const monthDefs = [
   { key: "2026-06", label: "Juin 2026" },
   { key: "2026-07", label: "Juillet 2026" },
-  { key: "2026-08", label: "Aout 2026" },
+  { key: "2026-08", label: "Août 2026" },
   { key: "2026-09", label: "Septembre 2026" },
   { key: "2026-10", label: "Octobre 2026" },
   { key: "2026-11", label: "Novembre 2026" },
-  { key: "2026-12", label: "Decembre 2026" },
+  { key: "2026-12", label: "Décembre 2026" },
   { key: "2027-01", label: "Janvier 2027" },
-  { key: "2027-02", label: "Fevrier 2027" },
+  { key: "2027-02", label: "Février 2027" },
   { key: "2027-03", label: "Mars 2027" },
   { key: "2027-04", label: "Avril 2027" },
   { key: "2027-05", label: "Mai 2027" }
@@ -824,21 +942,42 @@ const defaultInitialByTeam = {
 
 const codes = [
   { code: "", label: "-" },
-  { code: "CP", label: "Conge paye" },
+  { code: "CP", label: "Congé payé" },
   { code: "CPm", label: "CP matin (0.5)" },
-  { code: "CPam", label: "CP apres-midi (0.5)" },
+  { code: "CPam", label: "CP après-midi (0.5)" },
   { code: "CPp", label: "CP provisoire" },
   { code: "RTT", label: "RTT" },
   { code: "RTTm", label: "RTT matin (0.5)" },
-  { code: "RTTam", label: "RTT apres-midi (0.5)" },
+  { code: "RTTam", label: "RTT après-midi (0.5)" },
   { code: "RTTp", label: "RTT provisoire" },
-  { code: "CSS", label: "Conge sans solde" },
-  { code: "FAM", label: "Evenement familial" },
+  { code: "CSS", label: "Congé sans solde" },
+  { code: "FAM", label: "Évènement familial" },
   { code: "FR", label: "Fractionnement" },
-  { code: "PM", label: "Paternite / Maternite" },
+  { code: "PM", label: "Paternité / Maternité" },
   { code: "MAL", label: "Maladie" },
   { code: "DIV", label: "Divers" },
-  { code: "RC", label: "Recuperation" }
+  { code: "RC", label: "Récupération" }
+];
+
+const pickerDurationOptions = [
+  { key: "day", label: "Journée" },
+  { key: "am", label: "Matinée" },
+  { key: "pm", label: "Après-midi" }
+];
+
+const pickerAbsenceTypes = [
+  { baseCode: "", label: "Effacer" },
+  { baseCode: "CP", label: "CP" },
+  { baseCode: "RTT", label: "RTT" },
+  { baseCode: "CPp", label: "CP provisoire" },
+  { baseCode: "RTTp", label: "RTT provisoire" },
+  { baseCode: "CSS", label: "CSS" },
+  { baseCode: "FAM", label: "FAM" },
+  { baseCode: "FR", label: "FR" },
+  { baseCode: "PM", label: "PM" },
+  { baseCode: "MAL", label: "MAL" },
+  { baseCode: "DIV", label: "DIV" },
+  { baseCode: "RC", label: "RC" }
 ];
 
 const codeToWeight = {
@@ -846,31 +985,45 @@ const codeToWeight = {
   CPm: { CP: 0.5 },
   CPam: { CP: 0.5 },
   CPp: { CP: 1 },
+  CPpm: { CP: 0.5 },
+  CPpam: { CP: 0.5 },
   RTT: { RTT: 1 },
   RTTm: { RTT: 0.5 },
   RTTam: { RTT: 0.5 },
   RTTp: { RTT: 1 },
+  RTTpm: { RTT: 0.5 },
+  RTTpam: { RTT: 0.5 },
   CSS: { CSS: 1 },
+  CSSm: { CSS: 0.5 },
+  CSSam: { CSS: 0.5 },
   FAM: { FAM: 1 },
+  FAMm: { FAM: 0.5 },
+  FAMam: { FAM: 0.5 },
   FR: { FR: 1 },
+  FRm: { FR: 0.5 },
+  FRam: { FR: 0.5 },
   PM: { PM: 1 },
-  MAL: { MAL: 1 }
+  PMm: { PM: 0.5 },
+  PMam: { PM: 0.5 },
+  MAL: { MAL: 1 },
+  MALm: { MAL: 0.5 },
+  MALam: { MAL: 0.5 }
 };
 
 const weekdayShort = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
 
 const holidays = {
-  "2026-07-14": "Fete nationale",
+  "2026-07-14": "Fête nationale",
   "2026-08-15": "Assomption",
   "2026-11-01": "Toussaint",
   "2026-11-11": "Armistice",
-  "2026-12-25": "Noel",
+  "2026-12-25": "Noël",
   "2027-01-01": "Jour de l'an",
-  "2027-04-05": "Lundi de Paques",
-  "2027-05-01": "Fete du Travail",
+  "2027-04-05": "Lundi de Pâques",
+  "2027-05-01": "Fête du Travail",
   "2027-05-08": "Victoire 1945",
   "2027-05-13": "Ascension",
-  "2027-05-24": "Lundi de Pentecote"
+  "2027-05-24": "Lundi de Pentecôte"
 };
 
 const monthSelect = document.getElementById("monthSelect");
@@ -927,17 +1080,35 @@ const codeColorClass = {
   CPm: "code-green",
   CPam: "code-green",
   CPp: "code-orange",
+  CPpm: "code-orange",
+  CPpam: "code-orange",
   RTT: "code-green",
   RTTm: "code-green",
   RTTam: "code-green",
   RTTp: "code-orange",
+  RTTpm: "code-orange",
+  RTTpam: "code-orange",
   CSS: "code-green",
+  CSSm: "code-green",
+  CSSam: "code-green",
   FAM: "code-purple",
+  FAMm: "code-purple",
+  FAMam: "code-purple",
   FR: "code-blue",
+  FRm: "code-blue",
+  FRam: "code-blue",
   PM: "code-teal",
+  PMm: "code-teal",
+  PMam: "code-teal",
   MAL: "code-red",
+  MALm: "code-red",
+  MALam: "code-red",
   DIV: "code-gray",
-  RC: "code-green"
+  DIVm: "code-gray",
+  DIVam: "code-gray",
+  RC: "code-green",
+  RCm: "code-green",
+  RCam: "code-green"
 };
 
 editorKey = extractEditorKeyFromURL();
@@ -1092,7 +1263,7 @@ function loadCachedSharedState() {
     }
     return ensureStateShape(JSON.parse(raw));
   } catch (e) {
-    console.warn("Cache partagé invalide, reinitialisation", e);
+    console.warn("Cache partagé invalide, réinitialisation", e);
     return null;
   }
 }
@@ -1262,7 +1433,7 @@ function createLocalProvider() {
         try {
           return ensureStateShape(JSON.parse(raw));
         } catch (err) {
-          console.warn("Etat local invalide, reinitialisation", err);
+          console.warn("État local invalide, réinitialisation", err);
         }
       }
       return createEmptyState();
@@ -1412,17 +1583,82 @@ function getEntryKey(name, dateKey) {
   return `${name}|${dateKey}`;
 }
 
+function resolvePickerCode(baseCode, durationKey) {
+  if (!baseCode) {
+    return "";
+  }
+
+  if (durationKey === "day") {
+    return baseCode;
+  }
+
+  const halfCodeByBase = {
+    CP: { am: "CPm", pm: "CPam" },
+    CPp: { am: "CPpm", pm: "CPpam" },
+    RTT: { am: "RTTm", pm: "RTTam" },
+    RTTp: { am: "RTTpm", pm: "RTTpam" },
+    CSS: { am: "CSSm", pm: "CSSam" },
+    FAM: { am: "FAMm", pm: "FAMam" },
+    FR: { am: "FRm", pm: "FRam" },
+    PM: { am: "PMm", pm: "PMam" },
+    MAL: { am: "MALm", pm: "MALam" },
+    DIV: { am: "DIVm", pm: "DIVam" },
+    RC: { am: "RCm", pm: "RCam" }
+  };
+
+  const mapping = halfCodeByBase[baseCode];
+  if (mapping && mapping[durationKey]) {
+    return mapping[durationKey];
+  }
+
+  return baseCode;
+}
+
 function setupPicker() {
   const picker = document.getElementById("codePicker");
   picker.innerHTML = "";
-  for (const c of codes) {
-    const div = document.createElement("div");
-    div.className = "picker-opt";
-    div.dataset.code = c.code;
-    div.textContent = c.code || "\u2014";
-    if (c.code && codeColorClass[c.code]) {
-      div.classList.add(codeColorClass[c.code]);
+
+  const durationWrap = document.createElement("div");
+  durationWrap.className = "picker-duration";
+  picker.dataset.duration = "day";
+
+  for (const option of pickerDurationOptions) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "picker-duration-btn";
+    if (option.key === "day") {
+      btn.classList.add("active");
     }
+    btn.textContent = option.label;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      picker.dataset.duration = option.key;
+      durationWrap.querySelectorAll(".picker-duration-btn").forEach((el) => el.classList.remove("active"));
+      btn.classList.add("active");
+    });
+    durationWrap.appendChild(btn);
+  }
+  picker.appendChild(durationWrap);
+
+  const typeWrap = document.createElement("div");
+  typeWrap.className = "picker-types";
+
+  for (const type of pickerAbsenceTypes) {
+    const div = document.createElement("button");
+    div.type = "button";
+    div.className = "picker-opt";
+    div.dataset.baseCode = type.baseCode;
+    div.textContent = type.label;
+
+    if (!type.baseCode) {
+      div.classList.add("picker-opt-clear");
+    } else {
+      const previewCode = resolvePickerCode(type.baseCode, "day");
+      if (codeColorClass[previewCode]) {
+        div.classList.add(codeColorClass[previewCode]);
+      }
+    }
+
     div.addEventListener("click", (e) => {
       e.stopPropagation();
       if (!appContext.canEdit) {
@@ -1431,7 +1667,8 @@ function setupPicker() {
       }
       const empName = picker.dataset.name;
       const day = picker.dataset.day;
-      const code = c.code;
+      const durationKey = picker.dataset.duration || "day";
+      const code = resolvePickerCode(type.baseCode, durationKey);
       if (!code) {
         delete state.data[empName][selectedMonth][day];
       } else {
@@ -1442,8 +1679,10 @@ function setupPicker() {
       renderPlanning();
       renderAnnual();
     });
-    picker.appendChild(div);
+    typeWrap.appendChild(div);
   }
+
+  picker.appendChild(typeWrap);
 }
 
 function openPicker(td, name, day) {
@@ -1453,10 +1692,15 @@ function openPicker(td, name, day) {
   const picker = document.getElementById("codePicker");
   picker.dataset.name = name;
   picker.dataset.day = String(day);
+  picker.dataset.duration = "day";
+  picker.querySelectorAll(".picker-duration-btn").forEach((el) => {
+    const isDay = el.textContent === "Journée";
+    el.classList.toggle("active", isDay);
+  });
   const rect = td.getBoundingClientRect();
   let left = rect.left + window.scrollX;
   let top = rect.bottom + window.scrollY + 2;
-  picker.style.display = "grid";
+  picker.style.display = "block";
   const pw = picker.offsetWidth || 220;
   if (left + pw > window.innerWidth - 8) {
     left = window.innerWidth - pw - 8;
@@ -1468,6 +1712,23 @@ function openPicker(td, name, day) {
 function closePicker() {
   const picker = document.getElementById("codePicker");
   if (picker) picker.style.display = "none";
+}
+
+function extractCodeInfo(code) {
+  if (!code) return { baseCode: "", duration: "day" };
+  
+  if (code.endsWith("am")) {
+    return { baseCode: code.slice(0, -2), duration: "pm" };
+  } else if (code.endsWith("m")) {
+    return { baseCode: code.slice(0, -1), duration: "am" };
+  }
+  return { baseCode: code, duration: "day" };
+}
+
+function getDisplayLabel(baseCode) {
+  if (baseCode === "CPp") return "CP";
+  if (baseCode === "RTTp") return "RTT";
+  return baseCode;
 }
 
 function renderPlanning() {
@@ -1483,7 +1744,7 @@ function renderPlanning() {
   const row1 = document.createElement("tr");
   row1.innerHTML = [
     '<th class="sticky name">Collaborateur</th>',
-    '<th class="sticky-2">Equipe</th>'
+    '<th class="sticky-2">Équipe</th>'
   ].join("");
 
   for (let day = 1; day <= days; day += 1) {
@@ -1492,7 +1753,7 @@ function renderPlanning() {
     row1.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${day}</th>`;
   }
 
-  row1.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>FR</th>", "<th>PM</th>", "<th>MAL</th>"].join("");
+  row1.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>FR</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>PM</th>", "<th>MAL</th>"].join("");
 
   const row2 = document.createElement("tr");
   row2.innerHTML = '<th class="sticky name"></th><th class="sticky-2"></th>';
@@ -1541,12 +1802,34 @@ function renderPlanning() {
         }
 
         const current = state.data[name][selectedMonth][String(day)] || "";
-        applyCodeColor(td, current);
+        const codeInfo = extractCodeInfo(current);
+        const displayLabel = getDisplayLabel(codeInfo.baseCode);
+        if (codeInfo.duration === "day" || !current) {
+          applyCodeColor(td, current);
+          const chip = document.createElement("div");
+          chip.className = "code-chip";
+          chip.textContent = displayLabel;
+          td.appendChild(chip);
+        } else {
+          applyCodeColor(td, "");
+          td.classList.add("half-day");
+          const colorClass = codeColorClass[current] || "";
+          const topHalf = document.createElement("div");
+          topHalf.className = "code-chip-half top";
+          if (codeInfo.duration === "am") {
+            topHalf.textContent = displayLabel;
+            if (colorClass) topHalf.classList.add(colorClass);
+          }
+          td.appendChild(topHalf);
 
-        const chip = document.createElement("div");
-        chip.className = "code-chip";
-        chip.textContent = current;
-        td.appendChild(chip);
+          const bottomHalf = document.createElement("div");
+          bottomHalf.className = "code-chip-half bottom";
+          if (codeInfo.duration === "pm") {
+            bottomHalf.textContent = displayLabel;
+            if (colorClass) bottomHalf.classList.add(colorClass);
+          }
+          td.appendChild(bottomHalf);
+        }
 
         if (dayType.isWorkingDay) {
           td.addEventListener("click", (e) => {
@@ -1563,10 +1846,10 @@ function renderPlanning() {
       tbody.appendChild(tr);
     }
 
-    tbody.appendChild(createPresenceRow(teamMembers, selectedMonth, year, monthIndex, days, `Presents ${team}`));
+    tbody.appendChild(createPresenceRow(teamMembers, selectedMonth, year, monthIndex, days, `Présents ${team}`));
   }
 
-  tbody.appendChild(createPresenceRow(employees, selectedMonth, year, monthIndex, days, "Presents Global"));
+  tbody.appendChild(createPresenceRow(employees, selectedMonth, year, monthIndex, days, "Présents Global"));
 
   planningTable.appendChild(tbody);
 }
@@ -1579,7 +1862,7 @@ function applyCodeColor(td, code) {
 }
 
 function appendTotalsCells(row) {
-  const totals = ["CP", "RTT", "CSS", "FAM", "FR", "PM", "MAL"];
+  const totals = ["CP", "RTT", "FR", "CSS", "FAM", "PM", "MAL"];
   for (const bucket of totals) {
     const td = document.createElement("td");
     td.className = "totals";
@@ -1669,7 +1952,7 @@ function renderAnnual() {
   const hr = document.createElement("tr");
   hr.innerHTML = [
     '<th class="sticky name">Collaborateur</th>',
-    '<th class="sticky-2">Equipe</th>',
+    '<th class="sticky-2">Équipe</th>',
     "<th>Reliquat CP</th>",
     "<th>Reliquat RTT</th>",
     "<th>CP Initial</th>",
@@ -1773,7 +2056,7 @@ function getDayType(date) {
   const titleParts = [];
   if (isSaturday) titleParts.push("Samedi");
   if (isSunday) titleParts.push("Dimanche");
-  if (isHoliday) titleParts.push(`Ferie: ${holidayName}`);
+  if (isHoliday) titleParts.push(`Férié: ${holidayName}`);
 
   return {
     isSaturday,
@@ -1847,10 +2130,23 @@ function ensureStateShape(input) {
 
 function renderLegend() {
   legend.innerHTML = "";
-  for (const entry of codes.filter((c) => c.code)) {
+  const baseCodes = codes.filter((c) => c.code && !c.code.endsWith("m"));
+  for (const entry of baseCodes) {
     const item = document.createElement("div");
     item.className = "legend-item";
-    item.textContent = `${entry.code}: ${entry.label}`;
+
+    const badge = document.createElement("span");
+    badge.className = "legend-badge";
+    const colorClass = codeColorClass[entry.code];
+    if (colorClass) badge.classList.add(colorClass);
+    badge.textContent = getDisplayLabel(entry.code);
+
+    const label = document.createElement("span");
+    label.className = "legend-label";
+    label.textContent = entry.label;
+
+    item.appendChild(badge);
+    item.appendChild(label);
     legend.appendChild(item);
   }
 }
@@ -1886,11 +2182,11 @@ function exportCurrentMonthToCsv() {
   const monthIndex = Number(monthText) - 1;
   const days = getDaysInMonth(year, monthIndex);
 
-  const headers = ["Collaborateur", "Equipe", "CP Initial", "RTT Initial", "FR Initial"];
+  const headers = ["Collaborateur", "Équipe", "CP Initial", "RTT Initial", "FR Initial"];
   for (let day = 1; day <= days; day += 1) {
     headers.push(String(day));
   }
-  headers.push("CP", "RTT", "CSS", "FAM", "FR", "PM", "MAL");
+  headers.push("CP", "RTT", "FR", "CSS", "FAM", "PM", "MAL");
 
   const rows = [headers];
   for (const employee of employees) {
@@ -1901,7 +2197,7 @@ function exportCurrentMonthToCsv() {
     for (let day = 1; day <= days; day += 1) {
       row.push(state.data[name][selectedMonth][String(day)] || "");
     }
-    row.push(totals.CP, totals.RTT, totals.CSS, totals.FAM, totals.FR, totals.PM, totals.MAL);
+    row.push(totals.CP, totals.RTT, totals.FR, totals.CSS, totals.FAM, totals.PM, totals.MAL);
     rows.push(row);
   }
 
