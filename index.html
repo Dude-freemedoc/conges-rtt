@@ -1398,6 +1398,7 @@ function addOrUpdateEmployee() {
     }
   }
   state = newState;
+  state.employees = employees.map((e) => ({ ...e }));
   void persistSnapshot();
 
   employeeName.value = "";
@@ -1428,6 +1429,7 @@ function deleteEmployee(index) {
   if (state.initialBalances[name]) {
     delete state.initialBalances[name];
   }
+  state.employees = employees.map((e) => ({ ...e }));
   void persistSnapshot();
 
   renderEmployeeList();
@@ -1587,9 +1589,24 @@ function cloneState(s) {
 function mergeStates(remote, base, local) {
   const result = cloneState(remote);
 
-  for (const employee of employees) {
+  // Liste des collaborateurs : si elle a changé localement (ajout / suppression /
+  // renommage / changement d'équipe), on adopte la version locale.
+  const localEmps = JSON.stringify(local.employees || []);
+  const baseEmps = JSON.stringify(base.employees || []);
+  if (localEmps !== baseEmps) {
+    result.employees = (local.employees || []).map((e) => ({ ...e }));
+  }
+  const effectiveEmployees = result.employees && result.employees.length > 0
+    ? result.employees
+    : employees;
+
+  for (const employee of effectiveEmployees) {
     const name = employee.name;
     if (!result.data[name]) result.data[name] = {};
+    if (!result.initialBalances[name]) {
+      const teamInitial = defaultInitialByTeam[employee.team] || defaultInitialByTeam.N1;
+      result.initialBalances[name] = { ...teamInitial };
+    }
 
     // Données journalières
     for (const month of monthDefs) {
@@ -2194,10 +2211,24 @@ function createEmptyState() {
       data[name][month.key] = {};
     }
   }
-  return { data, initialBalances };
+  return { data, initialBalances, employees: employees.map((e) => ({ ...e })) };
 }
 
 function ensureStateShape(input) {
+  // Si l'état distant contient une liste de collaborateurs, on l'adopte
+  // comme source de vérité avant de construire la structure data/balances.
+  if (input && typeof input === "object" && Array.isArray(input.employees) && input.employees.length > 0) {
+    const cleaned = input.employees
+      .filter((e) => e && typeof e.name === "string" && e.name.trim())
+      .map((e) => ({ name: e.name.trim(), team: e.team === "N2" ? "N2" : "N1" }));
+    if (cleaned.length > 0) {
+      employees.length = 0;
+      employees.push(...cleaned);
+      sortEmployeesByTeamAndFirstName();
+      saveEmployeesToStorage();
+    }
+  }
+
   const next = createEmptyState();
   if (!input || typeof input !== "object" || !input.data) {
     return next;

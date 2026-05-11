@@ -76,10 +76,46 @@ gratuit), la synchronisation est volontairement minimaliste :
 - **Lecteurs** : un nouveau rafraîchissement est déclenché à chaque retour
   sur l'onglet (changement de visibilité). Pas de polling périodique.
 - **Éditeurs** : aucun rafraîchissement automatique en arrière-plan. Chaque
-  modification est immédiatement envoyée (`PUT`) à JSONbin et propagée aux
-  lecteurs lors de leur prochain rafraîchissement.
+  modification déclenche une séquence **GET → fusion → PUT** :
+  1. `GET` de l'état distant frais
+  2. Fusion : seules les modifications locales (par rapport à l'état chargé
+     au départ) sont appliquées par-dessus
+  3. `PUT` de l'état fusionné
+
+  Cela évite qu'un éditeur écrase silencieusement les modifications d'un
+  autre éditeur travaillant en parallèle (« last write wins »). Tant que
+  deux éditeurs ne touchent pas exactement la même cellule au même moment,
+  leurs changements sont tous conservés.
 
 Pour forcer un rafraîchissement manuellement, recharger la page.
+
+### Données partagées
+
+Tout l'état utile à l'application est stocké dans un **unique bin JSON** sur
+JSONbin :
+
+```json
+{
+  "state": {
+    "employees":        [ { "name": "...", "team": "N1" }, ... ],
+    "data":             { "<nom>": { "<YYYY-MM>": { "<jour>": "<code>" } } },
+    "initialBalances":  { "<nom>": { "CP": 25, "RTT": 0, "FR": 0,
+                                     "reliquatCP": 0, "reliquatRTT": 0 } }
+  }
+}
+```
+
+- `employees` : liste des collaborateurs et leur équipe (N1 / N2). Toute
+  modification (ajout / suppression / renommage / changement d'équipe) est
+  partagée comme le reste.
+- `data` : codes d'absence par collaborateur, par mois (`YYYY-MM`), par jour.
+  Les jours sans absence ne sont pas stockés.
+- `initialBalances` : soldes annuels initiaux + reliquats de l'année
+  précédente, par collaborateur.
+
+Une copie est conservée localement dans le `localStorage` (clé
+`gestion-conges-shared-cache-v1`) pour permettre un affichage instantané au
+chargement.
 
 ### Repli local
 
