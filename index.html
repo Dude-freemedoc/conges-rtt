@@ -179,34 +179,38 @@ button.danger {
 }
 
 .legend {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex: 0 0 auto;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 6px 10px;
+  border-radius: 8px;
+  padding: 4px 8px;
   background: #ffffffcc;
+  white-space: nowrap;
 }
 
 .legend-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 6px;
+  min-width: 32px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 5px;
   font-weight: 700;
   color: #fff;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
 }
 
 .legend-badge.code-green  { background: #70AD47; }
@@ -950,13 +954,13 @@ const codes = [
   { code: "RTTm", label: "RTT matin (0.5)" },
   { code: "RTTam", label: "RTT après-midi (0.5)" },
   { code: "RTTp", label: "RTT provisoire" },
+  { code: "FR", label: "Fractionnement" },
   { code: "CSS", label: "Congé sans solde" },
   { code: "FAM", label: "Évènement familial" },
-  { code: "FR", label: "Fractionnement" },
   { code: "PM", label: "Paternité / Maternité" },
   { code: "MAL", label: "Maladie" },
-  { code: "DIV", label: "Divers" },
-  { code: "RC", label: "Récupération" }
+  { code: "RC", label: "Récupération" },
+  { code: "DIV", label: "Divers" }
 ];
 
 const pickerDurationOptions = [
@@ -976,8 +980,8 @@ const pickerAbsenceTypes = [
   { baseCode: "FR", label: "FR" },
   { baseCode: "PM", label: "PM" },
   { baseCode: "MAL", label: "MAL" },
-  { baseCode: "DIV", label: "DIV" },
-  { baseCode: "RC", label: "RC" }
+  { baseCode: "RC", label: "RC" },
+  { baseCode: "DIV", label: "DIV" }
 ];
 
 const codeToWeight = {
@@ -1007,7 +1011,13 @@ const codeToWeight = {
   PMam: { PM: 0.5 },
   MAL: { MAL: 1 },
   MALm: { MAL: 0.5 },
-  MALam: { MAL: 0.5 }
+  MALam: { MAL: 0.5 },
+  RC: { RC: 1 },
+  RCm: { RC: 0.5 },
+  RCam: { RC: 0.5 },
+  DIV: { DIV: 1 },
+  DIVm: { DIV: 0.5 },
+  DIVam: { DIV: 0.5 }
 };
 
 const weekdayShort = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
@@ -1753,7 +1763,7 @@ function renderPlanning() {
     row1.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${day}</th>`;
   }
 
-  row1.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>FR</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>PM</th>", "<th>MAL</th>"].join("");
+  row1.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>FR</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>PM</th>", "<th>MAL</th>", "<th>RC</th>", "<th>DIV</th>"].join("");
 
   const row2 = document.createElement("tr");
   row2.innerHTML = '<th class="sticky name"></th><th class="sticky-2"></th>';
@@ -1762,7 +1772,7 @@ function renderPlanning() {
     const dayType = getDayType(date);
     row2.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
   }
-  row2.innerHTML += '<th colspan="7"></th>';
+  row2.innerHTML += '<th colspan="9"></th>';
 
   thead.appendChild(row1);
   thead.appendChild(row2);
@@ -1773,7 +1783,7 @@ function renderPlanning() {
   for (const team of teams) {
     const teamRow = document.createElement("tr");
     teamRow.className = "team-separator";
-    teamRow.innerHTML = `<td class="sticky name">-- SUPPORT ${team} --</td><td class="sticky-2"></td><td colspan="${7 + days}"></td>`;
+    teamRow.innerHTML = `<td class="sticky name">-- SUPPORT ${team} --</td><td class="sticky-2"></td><td colspan="${9 + days}"></td>`;
     tbody.appendChild(teamRow);
 
     const teamMembers = employees.filter((e) => e.team === team);
@@ -1862,7 +1872,7 @@ function applyCodeColor(td, code) {
 }
 
 function appendTotalsCells(row) {
-  const totals = ["CP", "RTT", "FR", "CSS", "FAM", "PM", "MAL"];
+  const totals = ["CP", "RTT", "FR", "CSS", "FAM", "PM", "MAL", "RC", "DIV"];
   for (const bucket of totals) {
     const td = document.createElement("td");
     td.className = "totals";
@@ -1902,7 +1912,7 @@ function createPresenceRow(members, monthKey, year, monthIndex, days, label) {
     tr.appendChild(td);
   }
 
-  for (let i = 0; i < 7; i += 1) {
+  for (let i = 0; i < 9; i += 1) {
     const td = document.createElement("td");
     td.className = "presence-cell presence-end";
     td.textContent = "";
@@ -1913,7 +1923,7 @@ function createPresenceRow(members, monthKey, year, monthIndex, days, label) {
 }
 
 function computeMonthTotals(name, monthKey) {
-  const totals = { CP: 0, RTT: 0, CSS: 0, FAM: 0, FR: 0, PM: 0, MAL: 0 };
+  const totals = { CP: 0, RTT: 0, CSS: 0, FAM: 0, FR: 0, PM: 0, MAL: 0, RC: 0, DIV: 0 };
   const cells = state.data[name][monthKey];
 
   for (const value of Object.values(cells)) {
@@ -1935,7 +1945,7 @@ function updateTotalsForRow(row, name) {
 }
 
 function computeAnnualTotals(name) {
-  const annual = { CP: 0, RTT: 0, FR: 0, CSS: 0, FAM: 0, PM: 0, MAL: 0 };
+  const annual = { CP: 0, RTT: 0, FR: 0, CSS: 0, FAM: 0, PM: 0, MAL: 0, RC: 0, DIV: 0 };
   for (const month of monthDefs) {
     const monthly = computeMonthTotals(name, month.key);
     for (const key of Object.keys(annual)) {
@@ -1967,7 +1977,9 @@ function renderAnnual() {
     "<th>CSS</th>",
     "<th>FAM</th>",
     "<th>PM</th>",
-    "<th>MAL</th>"
+    "<th>MAL</th>",
+    "<th>RC</th>",
+    "<th>DIV</th>"
   ].join("");
 
   thead.appendChild(hr);
@@ -1977,7 +1989,7 @@ function renderAnnual() {
   for (const team of teams) {
     const teamRow = document.createElement("tr");
     teamRow.className = "team-separator";
-    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td colspan="15"></td>';
+    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td colspan="17"></td>';
     tbody.appendChild(teamRow);
 
     const teamMembers = employees.filter((e) => e.team === team);
@@ -2007,6 +2019,8 @@ function renderAnnual() {
         <td>${a.FAM}</td>
         <td>${a.PM}</td>
         <td>${a.MAL}</td>
+        <td>${a.RC}</td>
+        <td>${a.DIV}</td>
       `;
 
       tr.querySelectorAll("[data-initial]").forEach((input) => {
@@ -2186,7 +2200,7 @@ function exportCurrentMonthToCsv() {
   for (let day = 1; day <= days; day += 1) {
     headers.push(String(day));
   }
-  headers.push("CP", "RTT", "FR", "CSS", "FAM", "PM", "MAL");
+  headers.push("CP", "RTT", "FR", "CSS", "FAM", "PM", "MAL", "RC", "DIV");
 
   const rows = [headers];
   for (const employee of employees) {
@@ -2197,7 +2211,7 @@ function exportCurrentMonthToCsv() {
     for (let day = 1; day <= days; day += 1) {
       row.push(state.data[name][selectedMonth][String(day)] || "");
     }
-    row.push(totals.CP, totals.RTT, totals.FR, totals.CSS, totals.FAM, totals.PM, totals.MAL);
+    row.push(totals.CP, totals.RTT, totals.FR, totals.CSS, totals.FAM, totals.PM, totals.MAL, totals.RC, totals.DIV);
     rows.push(row);
   }
 
