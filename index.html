@@ -516,18 +516,6 @@ td.day-cell.half-day {
   bottom: 0;
 }
 
-.code-chip {
-  display: block;
-  width: 100%;
-  font-size: 0.6rem;
-  font-weight: 700;
-  line-height: 18px;
-  text-align: center;
-  color: inherit;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
 .code-picker {
   position: absolute;
   z-index: 9999;
@@ -883,7 +871,6 @@ hr {
     <script>
 const STORAGE_KEY = "gestion-conges-v1";
 const SHARED_CACHE_KEY = "gestion-conges-shared-cache-v1";
-const SHARED_SYNC_INTERVAL_MS = 10000;
 
 // ── Configuration JSONbin.io ──────────────────────────────────────────────────
 // 1. Créez un compte gratuit sur https://jsonbin.io
@@ -936,7 +923,6 @@ const employees = [
   { name: "Patrick Serre", team: "N2" }
 ];
 
-const employeeNames = employees.map((e) => e.name);
 const teams = ["N1", "N2"];
 
 const defaultInitialByTeam = {
@@ -1455,10 +1441,7 @@ function createLocalProvider() {
     },
     async saveSnapshot(nextState) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
-    },
-    async saveAbsence() {},
-    async saveInitialBalance() {},
-    async clearMonth() {}
+    }
   };
 }
 
@@ -1524,10 +1507,7 @@ async function createJsonbinProvider() {
       if (!response.ok) {
         throw new Error(`JSONbin PUT échoué (${response.status})`);
       }
-    },
-    async saveAbsence() {},
-    async saveInitialBalance() {},
-    async clearMonth() {}
+    }
   };
 
   await provider.loadState();
@@ -1685,27 +1665,6 @@ async function refreshStateFromSharedStore() {
   }
 }
 
-async function persistAbsenceChange(name, day, code) {
-  const dateKey = `${selectedMonth}-${String(day).padStart(2, "0")}`;
-  await persistSnapshot();
-}
-
-async function persistInitialBalance(name, key) {
-  await persistSnapshot();
-}
-
-async function persistClearMonth(monthKey) {
-  await persistSnapshot();
-}
-
-function getEmployeeByName(name) {
-  return employees.find((employee) => employee.name === name);
-}
-
-function getEntryKey(name, dateKey) {
-  return `${name}|${dateKey}`;
-}
-
 function resolvePickerCode(baseCode, durationKey) {
   if (!baseCode) {
     return "";
@@ -1797,7 +1756,7 @@ function setupPicker() {
       } else {
         state.data[empName][selectedMonth][day] = code;
       }
-      void persistAbsenceChange(empName, day, code);
+      void persistSnapshot();
       closePicker();
       renderPlanning();
       renderAnnual();
@@ -2143,7 +2102,7 @@ function renderAnnual() {
           const employeeName = event.target.dataset.employee;
           const parsed = Number(event.target.value);
           state.initialBalances[employeeName][key] = Number.isFinite(parsed) ? parsed : 0;
-          void persistInitialBalance(employeeName, key);
+          void persistSnapshot();
           renderPlanning();
           renderAnnual();
         });
@@ -2312,7 +2271,7 @@ async function clearCurrentMonth() {
     const name = employee.name;
     state.data[name][selectedMonth] = {};
   }
-  await persistClearMonth(selectedMonth);
+  await persistSnapshot();
   renderPlanning();
   renderAnnual();
 }
