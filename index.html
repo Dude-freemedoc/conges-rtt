@@ -1064,7 +1064,9 @@ let appContext = {
   canEdit: true,
   currentUser: "",
   statusTone: "",
-  statusMessage: "Initialisation en cours..."
+  statusMessage: "Initialisation en cours...",
+  baseState: null,
+  pendingPersist: Promise.resolve()
 };
 
 function extractEditorKeyFromURL() {
@@ -1184,15 +1186,16 @@ async function bootstrapDataProvider() {
     appContext.canEdit = appContext.provider.canEdit;
     appContext.currentUser = appContext.provider.currentUser || "";
     state = await appContext.provider.loadState();
+    appContext.baseState = cloneState(state);
     saveCachedSharedState(state);
 
     if (appContext.provider.mode === "jsonbin") {
       appContext.statusTone = "";
       if (appContext.canEdit) {
-        appContext.statusMessage = "Mode collaboratif actif (ÉDITEUR). Les modifications sont partagées et synchronisées automatiquement toutes les 10 secondes.";
+        appContext.statusMessage = "Mode collaboratif actif (ÉDITEUR). Vos modifications sont partagées immédiatement.";
       } else {
         appContext.statusTone = "readonly";
-        appContext.statusMessage = "Mode collaboratif actif (LECTEUR). Consultation seule. Synchronisation automatique toutes les 10 secondes.";
+        appContext.statusMessage = "Mode collaboratif actif (LECTEUR). Consultation seule. Données rafraîchies au chargement et au retour sur l'onglet.";
       }
     } else {
       appContext.statusTone = "";
@@ -1530,8 +1533,100 @@ async function createJsonbinProvider() {
 }
 
 async function persistSnapshot() {
-  await appContext.provider.saveSnapshot(state);
+  // Sérialise les écritures pour éviter les races et garantit que chaque PUT
+  // est précédé d'un GET frais sur lequel on ré-applique uniquement nos
+  // modifications locales (anti-écrasement « last write wins »).
+  appContext.pendingPersist = appContext.pendingPersist
+    .catch(() => {})
+    .then(() => doPersistSnapshot());
+  return appContext.pendingPersist;
+}
+
+async function doPersistSnapshot() {
+  const provider = appContext.provider;
+  if (!provider) return;
+
+  // Mode local: pas de fusion nécessaire, on écrit directement.
+  if (provider.mode !== "jsonbin") {
+    await provider.saveSnapshot(state);
+    saveCachedSharedState(state);
+    appContext.baseState = cloneState(state);
+    return;
+  }
+
+  // Mode partagé: GET frais, fusion des modifs locales par-dessus, PUT.
+  let remote;
+  try {
+    remote = await provider.loadState();
+  } catch (error) {
+    console.warn("GET pré-PUT impossible, envoi sans fusion", error);
+    await provider.saveSnapshot(state);
+    saveCachedSharedState(state);
+    appContext.baseState = cloneState(state);
+    return;
+  }
+
+  const base = appContext.baseState || cloneState(remote);
+  const merged = mergeStates(remote, base, state);
+
+  await provider.saveSnapshot(merged);
+  state = merged;
+  appContext.baseState = cloneState(merged);
   saveCachedSharedState(state);
+  renderPlanning();
+  renderAnnual();
+}
+
+function cloneState(s) {
+  return JSON.parse(JSON.stringify(s));
+}
+
+// Fusionne les modifications locales (diff entre `base` et `local`) sur l'état
+// `remote` récemment récupéré. Les modifications faites par d'autres éditeurs
+// pendant ce temps sur des cellules différentes sont conservées.
+function mergeStates(remote, base, local) {
+  const result = cloneState(remote);
+
+  for (const employee of employees) {
+    const name = employee.name;
+    if (!result.data[name]) result.data[name] = {};
+
+    // Données journalières
+    for (const month of monthDefs) {
+      const monthKey = month.key;
+      const localMonth = local.data?.[name]?.[monthKey] || {};
+      const baseMonth = base.data?.[name]?.[monthKey] || {};
+      if (!result.data[name][monthKey]) result.data[name][monthKey] = {};
+      const targetMonth = result.data[name][monthKey];
+
+      // Cellules ajoutées ou modifiées localement
+      for (const day of Object.keys(localMonth)) {
+        if (localMonth[day] !== baseMonth[day]) {
+          targetMonth[day] = localMonth[day];
+        }
+      }
+      // Cellules supprimées localement
+      for (const day of Object.keys(baseMonth)) {
+        if (!(day in localMonth)) {
+          delete targetMonth[day];
+        }
+      }
+    }
+
+    // Soldes initiaux
+    const localBal = local.initialBalances?.[name];
+    const baseBal = base.initialBalances?.[name];
+    if (localBal && baseBal) {
+      if (!result.initialBalances[name]) result.initialBalances[name] = {};
+      for (const key of ["CP", "RTT", "FR", "reliquatCP", "reliquatRTT"]) {
+        if (localBal[key] !== baseBal[key]) {
+          result.initialBalances[name][key] = localBal[key];
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 function startBackgroundSync() {
@@ -1539,12 +1634,11 @@ function startBackgroundSync() {
     return;
   }
 
-  setInterval(() => {
-    void refreshStateFromSharedStore();
-  }, SHARED_SYNC_INTERVAL_MS);
-
+  // Pas de polling: les lecteurs récupèrent les données au chargement et
+  // à chaque retour sur l'onglet. Les éditeurs n'envoient que des PUT
+  // lors de leurs modifications (pas de GET en arrière-plan).
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
+    if (document.visibilityState === "visible" && !appContext.canEdit) {
       void refreshStateFromSharedStore();
     }
   });
@@ -1560,10 +1654,12 @@ async function refreshStateFromSharedStore() {
     const currentSerialized = JSON.stringify(state);
     const nextSerialized = JSON.stringify(next);
     if (currentSerialized === nextSerialized) {
+      appContext.baseState = cloneState(next);
       return;
     }
 
     state = next;
+    appContext.baseState = cloneState(next);
     saveCachedSharedState(state);
     renderPlanning();
     renderAnnual();

@@ -68,11 +68,18 @@ https://dude-freemedoc.github.io/conges-rtt/?key=LA_CLE_MAITRE_JSONBIN
 
 ### Synchronisation
 
-- Au chargement : affichage immédiat de la dernière version connue (cache
-  `localStorage`), puis rafraîchissement avec les données distantes
-- Sync automatique toutes les **10 secondes** + au retour sur l'onglet
-- Les modifications d'un éditeur sont visibles par tous les lecteurs sous
-  10 secondes
+Pour économiser le quota de l'API JSONbin (10 000 requêtes/mois sur le plan
+gratuit), la synchronisation est volontairement minimaliste :
+
+- **Au chargement** : affichage immédiat de la dernière version connue
+  (cache `localStorage`), puis rafraîchissement avec les données distantes.
+- **Lecteurs** : un nouveau rafraîchissement est déclenché à chaque retour
+  sur l'onglet (changement de visibilité). Pas de polling périodique.
+- **Éditeurs** : aucun rafraîchissement automatique en arrière-plan. Chaque
+  modification est immédiatement envoyée (`PUT`) à JSONbin et propagée aux
+  lecteurs lors de leur prochain rafraîchissement.
+
+Pour forcer un rafraîchissement manuellement, recharger la page.
 
 ### Repli local
 
