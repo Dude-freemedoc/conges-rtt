@@ -227,8 +227,9 @@ button.danger {
 }
 
 .table-wrap {
-  overflow: auto;
-  max-height: 64vh;
+  overflow-x: auto;
+  overflow-y: visible;
+  max-height: none;
   border: 1px solid var(--line);
   border-radius: 12px;
 }
@@ -1824,27 +1825,25 @@ function renderPlanning() {
 
   const thead = document.createElement("thead");
   const row1 = document.createElement("tr");
-  row1.innerHTML = [
+  row1.innerHTML = '<th class="sticky name"></th><th class="sticky-2"></th>';
+  for (let day = 1; day <= days; day += 1) {
+    const date = new Date(year, monthIndex, day);
+    const dayType = getDayType(date);
+    row1.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
+  }
+  row1.innerHTML += '<th colspan="9"></th>';
+
+  const row2 = document.createElement("tr");
+  row2.innerHTML = [
     '<th class="sticky name">Collaborateur</th>',
     '<th class="sticky-2">Équipe</th>'
   ].join("");
-
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
-    row1.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${day}</th>`;
+    row2.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${day}</th>`;
   }
-
-  row1.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>FR</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>PM</th>", "<th>MAL</th>", "<th>RC</th>", "<th>DIV</th>"].join("");
-
-  const row2 = document.createElement("tr");
-  row2.innerHTML = '<th class="sticky name"></th><th class="sticky-2"></th>';
-  for (let day = 1; day <= days; day += 1) {
-    const date = new Date(year, monthIndex, day);
-    const dayType = getDayType(date);
-    row2.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
-  }
-  row2.innerHTML += '<th colspan="9"></th>';
+  row2.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>FR</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>PM</th>", "<th>MAL</th>", "<th>RC</th>", "<th>DIV</th>"].join("");
 
   thead.appendChild(row1);
   thead.appendChild(row2);
