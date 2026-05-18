@@ -16,7 +16,7 @@ L'intégralité de l'application tient dans un seul fichier `index.html`
 - Saisie en **plage de dates** (même collaborateur) avec option **Jours ouvrés uniquement** et application en lot
 - Demi-journées affichées sous forme de **cellule divisée** (code en haut pour la matinée, en bas pour l'après-midi) — décompte 0.5
 - Totaux mensuels par collaborateur et lignes **Présents** par équipe + global
-- Récap annuel avec date d'embauche, ancienneté (ans), soldes initiaux (CP, RTT, FR), reliquats, soldes restants
+- Récap annuel avec date d'embauche, ancienneté (ans), **CP ancienneté** (Syntec), soldes initiaux (CP, RTT, FR), reliquats, soldes restants
 - Gestion des collaborateurs (ajout / modification / suppression)
 - Jours fériés français de la période identifiés et non modifiables
 - Samedis / dimanches grisés et non modifiables
@@ -168,3 +168,5 @@ s'affichent pas comme codes distincts :
 - La colonne **Ancienneté (ans)** du récap annuel affiche l'ancienneté en années
   complètes à la date de début de période d'acquisition (01/06), à partir de la
   date d'embauche.
+- La colonne **CP ancienneté** applique le barème Syntec (5/10/15/20 ans =
+  1/2/3/4 jours) et est intégrée au calcul de **CP restant**.

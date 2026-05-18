@@ -2295,6 +2295,7 @@ function renderAnnual() {
     '<th class="sticky-2">Équipe</th>',
     "<th>Date d'embauche</th>",
     "<th>Ancienneté (ans)</th>",
+    "<th>CP ancienneté</th>",
     "<th>Reliquat CP</th>",
     "<th>Reliquat RTT</th>",
     "<th>CP Initial</th>",
@@ -2321,7 +2322,7 @@ function renderAnnual() {
   for (const team of teams) {
     const teamRow = document.createElement("tr");
     teamRow.className = "team-separator";
-    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td></td><td></td><td colspan="17"></td>';
+    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td></td><td></td><td></td><td colspan="17"></td>';
     tbody.appendChild(teamRow);
 
     const teamMembers = employees.filter((e) => e.team === team);
@@ -2331,6 +2332,7 @@ function renderAnnual() {
       const a = computeAnnualTotals(name);
       const initial = state.initialBalances[name];
       const seniorityYears = getFullYearsBetween(employee.hireDate, getSeniorityReferenceDate());
+      const seniorityCpDays = computeSyntecAdditionalCpDays(seniorityYears);
       const tr = document.createElement("tr");
       tr.className = empIdx % 2 === 0 ? "row-even" : "row-odd";
       const disabledAttr = appContext.canEdit ? "" : "disabled";
@@ -2339,12 +2341,13 @@ function renderAnnual() {
         <td class="sticky-2">${employee.team}</td>
         <td>${employee.hireDate ? formatDateFr(employee.hireDate) : ""}</td>
         <td>${seniorityYears}</td>
+        <td>${seniorityCpDays}</td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="reliquatCP" data-employee="${name}" value="${initial.reliquatCP}" ${disabledAttr}></td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="reliquatRTT" data-employee="${name}" value="${initial.reliquatRTT}" ${disabledAttr}></td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="CP" data-employee="${name}" value="${initial.CP}" ${disabledAttr}></td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="RTT" data-employee="${name}" value="${initial.RTT}" ${disabledAttr}></td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="FR" data-employee="${name}" value="${initial.FR}" ${disabledAttr}></td>
-        <td>${round2(initial.reliquatCP + initial.CP - a.CP)}</td>
+        <td>${round2(initial.reliquatCP + initial.CP + seniorityCpDays - a.CP)}</td>
         <td>${round2(initial.reliquatRTT + initial.RTT - a.RTT)}</td>
         <td>${round2(initial.FR - a.FR)}</td>
         <td>${a.CP}</td>
@@ -2472,6 +2475,14 @@ function getFullYearsBetween(startIso, endDate) {
     years -= 1;
   }
   return Math.max(0, years);
+}
+
+function computeSyntecAdditionalCpDays(seniorityYears) {
+  if (seniorityYears >= 20) return 4;
+  if (seniorityYears >= 15) return 3;
+  if (seniorityYears >= 10) return 2;
+  if (seniorityYears >= 5) return 1;
+  return 0;
 }
 
 function createEmptyState() {
