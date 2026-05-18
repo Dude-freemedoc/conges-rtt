@@ -843,7 +843,6 @@ hr {
           </label>
           <button id="manageEmployeesBtn" type="button">Gérer collaborateurs</button>
           <button id="exportCsvBtn" type="button">Exporter CSV</button>
-          <button id="clearMonthBtn" type="button" class="danger">Vider le mois</button>
         </div>
       </header>
 
@@ -1055,7 +1054,6 @@ const legend = document.getElementById("legend");
 const planningTable = document.getElementById("planningTable");
 const annualTable = document.getElementById("annualTable");
 const exportCsvBtn = document.getElementById("exportCsvBtn");
-const clearMonthBtn = document.getElementById("clearMonthBtn");
 const rangeModeBtn = document.getElementById("rangeModeBtn");
 const rangeWorkingDaysOnly = document.getElementById("rangeWorkingDaysOnly");
 const appStatus = document.getElementById("appStatus");
@@ -1179,9 +1177,6 @@ async function init() {
     if (!rangeMode) return;
     renderPlanning();
   });
-  clearMonthBtn.addEventListener("click", () => {
-    void clearCurrentMonth();
-  });
 
   manageEmployeesBtn.addEventListener("click", openEmployeeModal);
   modalCloseBtn.addEventListener("click", closeEmployeeModal);
@@ -1273,7 +1268,6 @@ async function bootstrapDataProvider() {
 function syncUiState() {
   appStatus.textContent = appContext.statusMessage;
   appStatus.className = `app-status ${appContext.statusTone}`.trim();
-  clearMonthBtn.disabled = !appContext.canEdit;
   rangeModeBtn.disabled = !appContext.canEdit;
   manageEmployeesBtn.disabled = !appContext.canEdit;
   if (!appContext.canEdit) {
@@ -2448,20 +2442,6 @@ function renderMonthSelect() {
     monthSelect.appendChild(option);
   }
   monthSelect.value = selectedMonth;
-}
-
-async function clearCurrentMonth() {
-  if (!appContext.canEdit) return;
-  const isConfirmed = window.confirm("Confirmer la suppression des codes pour le mois courant ?");
-  if (!isConfirmed) return;
-
-  for (const employee of employees) {
-    const name = employee.name;
-    state.data[name][selectedMonth] = {};
-  }
-  await persistSnapshot();
-  renderPlanning();
-  renderAnnual();
 }
 
 function exportCurrentMonthToCsv() {
