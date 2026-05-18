@@ -178,6 +178,24 @@ button.danger {
   color: var(--danger);
 }
 
+button.active-toggle {
+  border-color: #7aa987;
+  background: #eaf6ed;
+}
+
+.toolbar-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  user-select: none;
+}
+
+.toolbar-check input {
+  margin: 0;
+}
+
 .legend {
   display: flex;
   flex-wrap: nowrap;
@@ -490,6 +508,10 @@ td.day-cell {
 
 td.day-cell.half-day {
   padding: 0 !important;
+}
+
+td.day-cell.range-preview {
+  box-shadow: inset 0 0 0 2px #4f8f65;
 }
 
 .code-chip-half {
@@ -814,6 +836,11 @@ hr {
             Mois
             <select id="monthSelect"></select>
           </label>
+          <button id="rangeModeBtn" type="button">Mode plage : OFF</button>
+          <label class="toolbar-check">
+            <input id="rangeWorkingDaysOnly" type="checkbox" checked />
+            Jours ouvrés uniquement
+          </label>
           <button id="manageEmployeesBtn" type="button">Gérer collaborateurs</button>
           <button id="exportCsvBtn" type="button">Exporter CSV</button>
           <button id="clearMonthBtn" type="button" class="danger">Vider le mois</button>
@@ -1029,6 +1056,8 @@ const planningTable = document.getElementById("planningTable");
 const annualTable = document.getElementById("annualTable");
 const exportCsvBtn = document.getElementById("exportCsvBtn");
 const clearMonthBtn = document.getElementById("clearMonthBtn");
+const rangeModeBtn = document.getElementById("rangeModeBtn");
+const rangeWorkingDaysOnly = document.getElementById("rangeWorkingDaysOnly");
 const appStatus = document.getElementById("appStatus");
 
 const manageEmployeesBtn = document.getElementById("manageEmployeesBtn");
@@ -1045,6 +1074,12 @@ let editingEmployeeIndex = -1;
 let state = createEmptyState();
 let selectedMonth = monthDefs[0].key;
 let editorKey = null;
+let rangeMode = false;
+let rangeSelection = {
+  startName: "",
+  startDay: null,
+  hoverDay: null
+};
 let appContext = {
   provider: null,
   mode: "local",
@@ -1053,7 +1088,8 @@ let appContext = {
   statusTone: "",
   statusMessage: "Initialisation en cours...",
   baseState: null,
-  pendingPersist: Promise.resolve()
+  pendingPersist: Promise.resolve(),
+  latestPersistId: 0
 };
 
 function extractEditorKeyFromURL() {
@@ -1123,6 +1159,7 @@ async function init() {
 
   monthSelect.addEventListener("change", () => {
     selectedMonth = monthSelect.value;
+    clearRangeSelection();
     closePicker();
     renderPlanning();
   });
@@ -1130,6 +1167,18 @@ async function init() {
   document.addEventListener("click", closePicker);
 
   exportCsvBtn.addEventListener("click", exportCurrentMonthToCsv);
+  rangeModeBtn.addEventListener("click", () => {
+    if (!appContext.canEdit) return;
+    rangeMode = !rangeMode;
+    clearRangeSelection();
+    closePicker();
+    updateRangeModeUi();
+    renderPlanning();
+  });
+  rangeWorkingDaysOnly.addEventListener("change", () => {
+    if (!rangeMode) return;
+    renderPlanning();
+  });
   clearMonthBtn.addEventListener("click", () => {
     void clearCurrentMonth();
   });
@@ -1152,6 +1201,24 @@ async function init() {
 
   await bootstrapDataProvider();
   startBackgroundSync();
+}
+
+function updateRangeModeUi() {
+  rangeModeBtn.textContent = rangeMode ? "Mode plage : ON" : "Mode plage : OFF";
+  rangeModeBtn.classList.toggle("active-toggle", rangeMode);
+  rangeWorkingDaysOnly.disabled = !rangeMode || !appContext.canEdit;
+  if (!appContext.canEdit) {
+    rangeMode = false;
+    clearRangeSelection();
+    rangeModeBtn.textContent = "Mode plage : OFF";
+    rangeModeBtn.classList.remove("active-toggle");
+  }
+}
+
+function clearRangeSelection() {
+  rangeSelection.startName = "";
+  rangeSelection.startDay = null;
+  rangeSelection.hoverDay = null;
 }
 
 async function bootstrapDataProvider() {
@@ -1207,6 +1274,8 @@ function syncUiState() {
   appStatus.textContent = appContext.statusMessage;
   appStatus.className = `app-status ${appContext.statusTone}`.trim();
   clearMonthBtn.disabled = !appContext.canEdit;
+  rangeModeBtn.disabled = !appContext.canEdit;
+  updateRangeModeUi();
 }
 
 function detectJsonbinContext() {
@@ -1516,24 +1585,32 @@ async function createJsonbinProvider() {
 }
 
 async function persistSnapshot() {
+  const localSnapshot = cloneState(state);
+  const persistId = ++appContext.latestPersistId;
+
   // Sérialise les écritures pour éviter les races et garantit que chaque PUT
   // est précédé d'un GET frais sur lequel on ré-applique uniquement nos
   // modifications locales (anti-écrasement « last write wins »).
   appContext.pendingPersist = appContext.pendingPersist
     .catch(() => {})
-    .then(() => doPersistSnapshot());
+    .then(() => doPersistSnapshot(localSnapshot, persistId));
   return appContext.pendingPersist;
 }
 
-async function doPersistSnapshot() {
+async function doPersistSnapshot(localState, persistId) {
   const provider = appContext.provider;
   if (!provider) return;
 
+  const isLatestPersist = () => persistId === appContext.latestPersistId;
+
   // Mode local: pas de fusion nécessaire, on écrit directement.
   if (provider.mode !== "jsonbin") {
-    await provider.saveSnapshot(state);
-    saveCachedSharedState(state);
-    appContext.baseState = cloneState(state);
+    await provider.saveSnapshot(localState);
+    appContext.baseState = cloneState(localState);
+    if (isLatestPersist()) {
+      state = cloneState(localState);
+      saveCachedSharedState(state);
+    }
     return;
   }
 
@@ -1543,21 +1620,28 @@ async function doPersistSnapshot() {
     remote = await provider.loadState();
   } catch (error) {
     console.warn("GET pré-PUT impossible, envoi sans fusion", error);
-    await provider.saveSnapshot(state);
-    saveCachedSharedState(state);
-    appContext.baseState = cloneState(state);
+    await provider.saveSnapshot(localState);
+    appContext.baseState = cloneState(localState);
+    if (isLatestPersist()) {
+      state = cloneState(localState);
+      saveCachedSharedState(state);
+      renderPlanning();
+      renderAnnual();
+    }
     return;
   }
 
   const base = appContext.baseState || cloneState(remote);
-  const merged = mergeStates(remote, base, state);
+  const merged = mergeStates(remote, base, localState);
 
   await provider.saveSnapshot(merged);
-  state = merged;
   appContext.baseState = cloneState(merged);
-  saveCachedSharedState(state);
-  renderPlanning();
-  renderAnnual();
+  if (isLatestPersist()) {
+    state = merged;
+    saveCachedSharedState(state);
+    renderPlanning();
+    renderAnnual();
+  }
 }
 
 function cloneState(s) {
@@ -1749,15 +1833,28 @@ function setupPicker() {
         return;
       }
       const empName = picker.dataset.name;
-      const day = picker.dataset.day;
       const durationKey = picker.dataset.duration || "day";
       const code = resolvePickerCode(type.baseCode, durationKey);
-      if (!code) {
-        delete state.data[empName][selectedMonth][day];
+      const mode = picker.dataset.mode || "single";
+
+      if (mode === "range") {
+        const startDay = Number(picker.dataset.rangeStartDay || "0");
+        const endDay = Number(picker.dataset.rangeEndDay || "0");
+        const onlyWorkingDays = picker.dataset.rangeWorkingDaysOnly === "1";
+        if (startDay > 0 && endDay > 0) {
+          applyCodeToRange(empName, startDay, endDay, code, onlyWorkingDays);
+        }
       } else {
-        state.data[empName][selectedMonth][day] = code;
+        const day = picker.dataset.day;
+        if (!code) {
+          delete state.data[empName][selectedMonth][day];
+        } else {
+          state.data[empName][selectedMonth][day] = code;
+        }
       }
+
       void persistSnapshot();
+      clearRangeSelection();
       closePicker();
       renderPlanning();
       renderAnnual();
@@ -1768,13 +1865,17 @@ function setupPicker() {
   picker.appendChild(typeWrap);
 }
 
-function openPicker(td, name, day) {
+function openPicker(td, name, day, options = {}) {
   if (!appContext.canEdit) {
     return;
   }
   const picker = document.getElementById("codePicker");
   picker.dataset.name = name;
   picker.dataset.day = String(day);
+  picker.dataset.mode = options.mode || "single";
+  picker.dataset.rangeStartDay = options.rangeStartDay ? String(options.rangeStartDay) : "";
+  picker.dataset.rangeEndDay = options.rangeEndDay ? String(options.rangeEndDay) : "";
+  picker.dataset.rangeWorkingDaysOnly = options.rangeWorkingDaysOnly ? "1" : "0";
   picker.dataset.duration = "day";
   picker.querySelectorAll(".picker-duration-btn").forEach((el) => {
     const isDay = el.textContent === "Journée";
@@ -1795,6 +1896,28 @@ function openPicker(td, name, day) {
 function closePicker() {
   const picker = document.getElementById("codePicker");
   if (picker) picker.style.display = "none";
+}
+
+function applyCodeToRange(name, startDay, endDay, code, onlyWorkingDays) {
+  const [yearText, monthText] = selectedMonth.split("-");
+  const year = Number(yearText);
+  const monthIndex = Number(monthText) - 1;
+  const from = Math.min(startDay, endDay);
+  const to = Math.max(startDay, endDay);
+
+  for (let day = from; day <= to; day += 1) {
+    const date = new Date(year, monthIndex, day);
+    const dayType = getDayType(date);
+    if (onlyWorkingDays && !dayType.isWorkingDay) {
+      continue;
+    }
+    const dayKey = String(day);
+    if (!code) {
+      delete state.data[name][selectedMonth][dayKey];
+    } else {
+      state.data[name][selectedMonth][dayKey] = code;
+    }
+  }
 }
 
 function extractCodeInfo(code) {
@@ -1913,9 +2036,59 @@ function renderPlanning() {
         }
 
         if (dayType.isWorkingDay) {
+          const isRangePreview =
+            rangeMode &&
+            rangeSelection.startName === name &&
+            Number.isInteger(rangeSelection.startDay) &&
+            Number.isInteger(rangeSelection.hoverDay) &&
+            day >= Math.min(rangeSelection.startDay, rangeSelection.hoverDay) &&
+            day <= Math.max(rangeSelection.startDay, rangeSelection.hoverDay);
+          if (isRangePreview) {
+            td.classList.add("range-preview");
+          }
+
           td.addEventListener("click", (e) => {
             e.stopPropagation();
-            openPicker(td, name, day);
+            if (!rangeMode) {
+              openPicker(td, name, day);
+              return;
+            }
+
+            if (!rangeSelection.startName || !Number.isInteger(rangeSelection.startDay)) {
+              rangeSelection.startName = name;
+              rangeSelection.startDay = day;
+              rangeSelection.hoverDay = day;
+              closePicker();
+              renderPlanning();
+              return;
+            }
+
+            if (rangeSelection.startName !== name) {
+              rangeSelection.startName = name;
+              rangeSelection.startDay = day;
+              rangeSelection.hoverDay = day;
+              closePicker();
+              renderPlanning();
+              return;
+            }
+
+            const startDay = rangeSelection.startDay;
+            const endDay = day;
+            rangeSelection.hoverDay = day;
+            openPicker(td, name, day, {
+              mode: "range",
+              rangeStartDay: startDay,
+              rangeEndDay: endDay,
+              rangeWorkingDaysOnly: !!rangeWorkingDaysOnly.checked
+            });
+          });
+          td.addEventListener("mouseenter", () => {
+            if (!rangeMode) return;
+            if (rangeSelection.startName !== name) return;
+            if (!Number.isInteger(rangeSelection.startDay)) return;
+            if (rangeSelection.hoverDay === day) return;
+            rangeSelection.hoverDay = day;
+            renderPlanning();
           });
           td.style.cursor = appContext.canEdit ? "pointer" : "default";
         }
