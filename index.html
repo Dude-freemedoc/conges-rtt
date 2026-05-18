@@ -836,13 +836,12 @@ hr {
             Mois
             <select id="monthSelect"></select>
           </label>
-          <button id="rangeModeBtn" type="button">Mode plage : OFF</button>
+          <button id="rangeModeBtn" type="button" disabled>Mode plage : OFF</button>
           <label class="toolbar-check">
-            <input id="rangeWorkingDaysOnly" type="checkbox" checked />
+            <input id="rangeWorkingDaysOnly" type="checkbox" checked disabled />
             Jours ouvrés uniquement
           </label>
-          <button id="manageEmployeesBtn" type="button">Gérer collaborateurs</button>
-          <button id="exportCsvBtn" type="button">Exporter CSV</button>
+          <button id="manageEmployeesBtn" type="button" disabled>Gérer collaborateurs</button>
         </div>
       </header>
 
@@ -1053,7 +1052,6 @@ const monthSelect = document.getElementById("monthSelect");
 const legend = document.getElementById("legend");
 const planningTable = document.getElementById("planningTable");
 const annualTable = document.getElementById("annualTable");
-const exportCsvBtn = document.getElementById("exportCsvBtn");
 const rangeModeBtn = document.getElementById("rangeModeBtn");
 const rangeWorkingDaysOnly = document.getElementById("rangeWorkingDaysOnly");
 const appStatus = document.getElementById("appStatus");
@@ -1081,7 +1079,7 @@ let rangeSelection = {
 let appContext = {
   provider: null,
   mode: "local",
-  canEdit: true,
+  canEdit: false,
   currentUser: "",
   statusTone: "",
   statusMessage: "Initialisation en cours...",
@@ -1164,7 +1162,6 @@ async function init() {
 
   document.addEventListener("click", closePicker);
 
-  exportCsvBtn.addEventListener("click", exportCurrentMonthToCsv);
   rangeModeBtn.addEventListener("click", () => {
     if (!appContext.canEdit) return;
     rangeMode = !rangeMode;
@@ -2442,44 +2439,6 @@ function renderMonthSelect() {
     monthSelect.appendChild(option);
   }
   monthSelect.value = selectedMonth;
-}
-
-function exportCurrentMonthToCsv() {
-  const [yearText, monthText] = selectedMonth.split("-");
-  const year = Number(yearText);
-  const monthIndex = Number(monthText) - 1;
-  const days = getDaysInMonth(year, monthIndex);
-
-  const headers = ["Collaborateur", "Équipe", "CP Initial", "RTT Initial", "FR Initial"];
-  for (let day = 1; day <= days; day += 1) {
-    headers.push(String(day));
-  }
-  headers.push("CP", "RTT", "FR", "CSS", "FAM", "PM", "MAL", "RC", "DIV");
-
-  const rows = [headers];
-  for (const employee of employees) {
-    const name = employee.name;
-    const initial = state.initialBalances[name];
-    const totals = computeMonthTotals(name, selectedMonth);
-    const row = [name, employee.team, initial.CP, initial.RTT, initial.FR];
-    for (let day = 1; day <= days; day += 1) {
-      row.push(state.data[name][selectedMonth][String(day)] || "");
-    }
-    row.push(totals.CP, totals.RTT, totals.FR, totals.CSS, totals.FAM, totals.PM, totals.MAL, totals.RC, totals.DIV);
-    rows.push(row);
-  }
-
-  const csv = rows
-    .map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(";"))
-    .join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `planning-${selectedMonth}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
 }
     </script>
   </body>

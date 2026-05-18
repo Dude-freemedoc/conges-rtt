@@ -18,7 +18,6 @@ L'intégralité de l'application tient dans un seul fichier `index.html`
 - Totaux mensuels par collaborateur et lignes **Présents** par équipe + global
 - Récap annuel avec soldes initiaux (CP, RTT, FR), reliquats, soldes restants
 - Gestion des collaborateurs (ajout / modification / suppression)
-- Export CSV du mois courant
 - Jours fériés français de la période identifiés et non modifiables
 - Samedis / dimanches grisés et non modifiables
 
@@ -67,6 +66,9 @@ https://dude-freemedoc.github.io/conges-rtt/?key=LA_CLE_MAITRE_JSONBIN
 - **Lecteurs** (sans clé) : consultation seule. Tous les boutons de
   modification sont désactivés, y compris la gestion des collaborateurs
   (ouverture de la modale bloquée). Statut : `Mode collaboratif actif (LECTEUR)`.
+
+Par sécurité, les contrôles de modification sont grisés au chargement et ne
+s'activent qu'après confirmation explicite du mode éditeur.
 
 ### Synchronisation
 
@@ -160,4 +162,3 @@ s'affichent pas comme codes distincts :
   les totaux ; la couleur orange permet uniquement de les distinguer
   visuellement.
 - Les soldes initiaux sont uniquement modifiables depuis le récap annuel.
-- L'export CSV reprend l'état du mois actuellement sélectionné.
