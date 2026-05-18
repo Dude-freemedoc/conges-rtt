@@ -881,6 +881,7 @@ hr {
               <option value="N1">Support N1</option>
               <option value="N2">Support N2</option>
             </select>
+            <input type="date" id="employeeHireDate" placeholder="Date d'embauche" />
             <button id="addEmployeeBtn" type="button">Ajouter</button>
             <button id="updateEmployeeBtn" type="button" style="display:none">Modifier</button>
             <button id="cancelEditBtn" type="button" style="display:none">Annuler</button>
@@ -897,6 +898,7 @@ hr {
     <script>
 const STORAGE_KEY = "gestion-conges-v1";
 const SHARED_CACHE_KEY = "gestion-conges-shared-cache-v1";
+const HIRE_DATE_MIGRATION_KEY = "gestion-conges-hiredate-migrated-v1";
 
 // ── Configuration JSONbin.io ──────────────────────────────────────────────────
 // 1. Créez un compte gratuit sur https://jsonbin.io
@@ -924,29 +926,29 @@ const monthDefs = [
 ];
 
 const employees = [
-  { name: "Jean-Marie Da Silva", team: "N1" },
-  { name: "Julien Baud", team: "N1" },
-  { name: "Ludovic Rodriguez", team: "N1" },
-  { name: "Arnaud Picoulet", team: "N1" },
-  { name: "Benjamin Calbet", team: "N1" },
-  { name: "Benoit Roinard", team: "N1" },
-  { name: "Dylan Joubin", team: "N1" },
-  { name: "Emeric Bonnemaison", team: "N1" },
-  { name: "Florian Gauvin", team: "N1" },
-  { name: "Jean Michel Defontaine", team: "N1" },
-  { name: "Jeremy Vivarrat", team: "N1" },
-  { name: "Julian Machex", team: "N1" },
-  { name: "Maxime Werner", team: "N1" },
-  { name: "Michel Vu", team: "N1" },
-  { name: "Pierre Coly", team: "N1" },
-  { name: "Romuald Gouleau", team: "N1" },
-  { name: "Geoffray Rolland", team: "N2" },
-  { name: "Pascal Raimbault", team: "N2" },
-  { name: "Baptiste Hamet", team: "N2" },
-  { name: "Emeline Bequerel", team: "N2" },
-  { name: "Matthieu Moulin", team: "N2" },
-  { name: "Nil Salaun", team: "N2" },
-  { name: "Patrick Serre", team: "N2" }
+  { name: "Jean-Marie Da Silva", team: "N1", hireDate: "2002-01-07" },
+  { name: "Julien Baud", team: "N1", hireDate: "2012-07-23" },
+  { name: "Ludovic Rodriguez", team: "N1", hireDate: "2009-01-05" },
+  { name: "Arnaud Picoulet", team: "N1", hireDate: "2016-02-11" },
+  { name: "Benjamin Calbet", team: "N1", hireDate: "2002-09-24" },
+  { name: "Benoit Roinard", team: "N1", hireDate: "" },
+  { name: "Dylan Joubin", team: "N1", hireDate: "2025-02-17" },
+  { name: "Emeric Bonnemaison", team: "N1", hireDate: "2025-05-05" },
+  { name: "Florian Gauvin", team: "N1", hireDate: "2025-01-13" },
+  { name: "Jean Michel Defontaine", team: "N1", hireDate: "2009-09-25" },
+  { name: "Jeremy Vivarrat", team: "N1", hireDate: "" },
+  { name: "Julian Machex", team: "N1", hireDate: "2023-06-01" },
+  { name: "Maxime Werner", team: "N1", hireDate: "2020-08-03" },
+  { name: "Michel Vu", team: "N1", hireDate: "2015-10-26" },
+  { name: "Pierre Coly", team: "N1", hireDate: "2021-06-01" },
+  { name: "Romuald Gouleau", team: "N1", hireDate: "2024-10-21" },
+  { name: "Geoffray Rolland", team: "N2", hireDate: "2003-05-12" },
+  { name: "Pascal Raimbault", team: "N2", hireDate: "2003-10-27" },
+  { name: "Baptiste Hamet", team: "N2", hireDate: "2012-09-03" },
+  { name: "Emeline Bequerel", team: "N2", hireDate: "2006-12-01" },
+  { name: "Matthieu Moulin", team: "N2", hireDate: "2013-05-13" },
+  { name: "Nil Salaun", team: "N2", hireDate: "2021-04-01" },
+  { name: "Patrick Serre", team: "N2", hireDate: "1998-11-16" }
 ];
 
 const teams = ["N1", "N2"];
@@ -1061,6 +1063,7 @@ const employeeModal = document.getElementById("employeeModal");
 const modalCloseBtn = document.getElementById("modalCloseBtn");
 const employeeName = document.getElementById("employeeName");
 const employeeTeam = document.getElementById("employeeTeam");
+const employeeHireDate = document.getElementById("employeeHireDate");
 const addEmployeeBtn = document.getElementById("addEmployeeBtn");
 const updateEmployeeBtn = document.getElementById("updateEmployeeBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
@@ -1260,6 +1263,41 @@ async function bootstrapDataProvider() {
   syncUiState();
   renderPlanning();
   renderAnnual();
+
+  void maybeMigrateHireDatesToSharedState();
+}
+
+async function maybeMigrateHireDatesToSharedState() {
+  if (appContext.provider?.mode !== "jsonbin" || !appContext.canEdit) {
+    return;
+  }
+
+  const hasAnyHireDate = employees.some((e) => normalizeHireDate(e.hireDate));
+  if (!hasAnyHireDate) {
+    return;
+  }
+
+  let alreadyMigrated = false;
+  try {
+    alreadyMigrated = localStorage.getItem(HIRE_DATE_MIGRATION_KEY) === "1";
+  } catch (e) {
+    alreadyMigrated = false;
+  }
+  if (alreadyMigrated) {
+    return;
+  }
+
+  state.employees = employees.map((e) => ({ ...e }));
+  try {
+    await persistSnapshot();
+    try {
+      localStorage.setItem(HIRE_DATE_MIGRATION_KEY, "1");
+    } catch (e) {
+      console.warn("Migration hireDate effectuée mais drapeau local non sauvegardé", e);
+    }
+  } catch (error) {
+    console.warn("Migration automatique des dates d'embauche impossible", error);
+  }
 }
 
 function syncUiState() {
@@ -1311,8 +1349,22 @@ function loadEmployeesFromStorage() {
     const stored = localStorage.getItem("gestion-conges-employees");
     if (stored) {
       const loaded = JSON.parse(stored);
+      const currentHireDateByName = new Map(
+        employees
+          .filter((e) => e && typeof e.name === "string")
+          .map((e) => [e.name, normalizeHireDate(e.hireDate)])
+      );
+      const cleaned = Array.isArray(loaded)
+        ? loaded
+            .filter((e) => e && typeof e.name === "string" && e.name.trim())
+            .map((e) => ({
+              name: e.name.trim(),
+              team: e.team === "N2" ? "N2" : "N1",
+              hireDate: normalizeHireDate(e.hireDate) || currentHireDateByName.get(e.name.trim()) || ""
+            }))
+        : [];
       employees.length = 0;
-      employees.push(...loaded);
+      employees.push(...cleaned);
     }
   } catch (e) {
     console.error("Impossible de charger les collaborateurs", e);
@@ -1347,6 +1399,7 @@ function openEmployeeModal() {
   editingEmployeeIndex = -1;
   employeeName.value = "";
   employeeTeam.value = "N1";
+  employeeHireDate.value = "";
   addEmployeeBtn.style.display = "block";
   updateEmployeeBtn.style.display = "none";
   cancelEditBtn.style.display = "none";
@@ -1369,7 +1422,7 @@ function renderEmployeeList() {
     div.innerHTML = `
       <div class="employee-info">
         <div class="employee-name">${emp.name}</div>
-        <div class="employee-team">Support ${emp.team}</div>
+        <div class="employee-team">Support ${emp.team}${emp.hireDate ? " • Embauche " + formatDateFr(emp.hireDate) : ""}</div>
       </div>
       <div class="employee-actions">
         <button type="button" data-index="${i}">Modifier</button>
@@ -1392,6 +1445,7 @@ function editEmployee(index) {
   const emp = employees[index];
   employeeName.value = emp.name;
   employeeTeam.value = emp.team;
+  employeeHireDate.value = emp.hireDate || "";
   addEmployeeBtn.style.display = "none";
   updateEmployeeBtn.style.display = "block";
   cancelEditBtn.style.display = "block";
@@ -1403,6 +1457,7 @@ function cancelEmployeeEdit() {
   editingEmployeeIndex = -1;
   employeeName.value = "";
   employeeTeam.value = "N1";
+  employeeHireDate.value = "";
   addEmployeeBtn.style.display = "block";
   updateEmployeeBtn.style.display = "none";
   cancelEditBtn.style.display = "none";
@@ -1415,6 +1470,7 @@ function addOrUpdateEmployee() {
   }
   const name = employeeName.value.trim();
   const team = employeeTeam.value;
+  const hireDate = normalizeHireDate(employeeHireDate.value);
 
   if (!name) {
     alert("Veuillez entrer un nom");
@@ -1425,6 +1481,7 @@ function addOrUpdateEmployee() {
     const oldName = employees[editingEmployeeIndex].name;
     employees[editingEmployeeIndex].name = name;
     employees[editingEmployeeIndex].team = team;
+    employees[editingEmployeeIndex].hireDate = hireDate;
 
     if (oldName !== name && state.data[oldName]) {
       state.data[name] = state.data[oldName];
@@ -1441,7 +1498,7 @@ function addOrUpdateEmployee() {
       alert("Ce collaborateur existe déjà");
       return;
     }
-    employees.push({ name, team });
+    employees.push({ name, team, hireDate });
   }
 
   sortEmployeesByTeamAndFirstName();
@@ -1463,6 +1520,7 @@ function addOrUpdateEmployee() {
 
   employeeName.value = "";
   employeeTeam.value = "N1";
+  employeeHireDate.value = "";
   addEmployeeBtn.style.display = "block";
   updateEmployeeBtn.style.display = "none";
   cancelEditBtn.style.display = "none";
@@ -1660,6 +1718,16 @@ function cloneState(s) {
 // pendant ce temps sur des cellules différentes sont conservées.
 function mergeStates(remote, base, local) {
   const result = cloneState(remote);
+  const localHireDateByName = new Map(
+    (local.employees || [])
+      .filter((e) => e && typeof e.name === "string")
+      .map((e) => [e.name, normalizeHireDate(e.hireDate)])
+  );
+  const baseHireDateByName = new Map(
+    (base.employees || [])
+      .filter((e) => e && typeof e.name === "string")
+      .map((e) => [e.name, normalizeHireDate(e.hireDate)])
+  );
 
   // Liste des collaborateurs : si elle a changé localement (ajout / suppression /
   // renommage / changement d'équipe), on adopte la version locale.
@@ -1668,9 +1736,20 @@ function mergeStates(remote, base, local) {
   if (localEmps !== baseEmps) {
     result.employees = (local.employees || []).map((e) => ({ ...e }));
   }
-  const effectiveEmployees = result.employees && result.employees.length > 0
+  const mergedEmployees = ((result.employees && result.employees.length > 0)
     ? result.employees
-    : employees;
+    : employees)
+    .filter((e) => e && typeof e.name === "string" && e.name.trim())
+    .map((e) => {
+      const name = e.name.trim();
+      return {
+        name,
+        team: e.team === "N2" ? "N2" : "N1",
+        hireDate: normalizeHireDate(e.hireDate) || localHireDateByName.get(name) || baseHireDateByName.get(name) || ""
+      };
+    });
+  result.employees = mergedEmployees;
+  const effectiveEmployees = mergedEmployees;
 
   for (const employee of effectiveEmployees) {
     const name = employee.name;
@@ -2214,6 +2293,8 @@ function renderAnnual() {
   hr.innerHTML = [
     '<th class="sticky name">Collaborateur</th>',
     '<th class="sticky-2">Équipe</th>',
+    "<th>Date d'embauche</th>",
+    "<th>Ancienneté (ans)</th>",
     "<th>Reliquat CP</th>",
     "<th>Reliquat RTT</th>",
     "<th>CP Initial</th>",
@@ -2240,7 +2321,7 @@ function renderAnnual() {
   for (const team of teams) {
     const teamRow = document.createElement("tr");
     teamRow.className = "team-separator";
-    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td colspan="17"></td>';
+    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td></td><td></td><td colspan="17"></td>';
     tbody.appendChild(teamRow);
 
     const teamMembers = employees.filter((e) => e.team === team);
@@ -2249,12 +2330,15 @@ function renderAnnual() {
       const name = employee.name;
       const a = computeAnnualTotals(name);
       const initial = state.initialBalances[name];
+      const seniorityYears = getFullYearsBetween(employee.hireDate, getSeniorityReferenceDate());
       const tr = document.createElement("tr");
       tr.className = empIdx % 2 === 0 ? "row-even" : "row-odd";
       const disabledAttr = appContext.canEdit ? "" : "disabled";
       tr.innerHTML = `
         <td class="sticky name">${name}</td>
         <td class="sticky-2">${employee.team}</td>
+        <td>${employee.hireDate ? formatDateFr(employee.hireDate) : ""}</td>
+        <td>${seniorityYears}</td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="reliquatCP" data-employee="${name}" value="${initial.reliquatCP}" ${disabledAttr}></td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="reliquatRTT" data-employee="${name}" value="${initial.reliquatRTT}" ${disabledAttr}></td>
         <td><input class="initial-input" type="number" step="0.5" min="0" data-initial="CP" data-employee="${name}" value="${initial.CP}" ${disabledAttr}></td>
@@ -2337,6 +2421,59 @@ function getDaysInMonth(year, monthIndex) {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
+function normalizeHireDate(value) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return "";
+  }
+  const [y, m, d] = trimmed.split("-").map(Number);
+  const parsed = new Date(Date.UTC(y, m - 1, d));
+  if (parsed.getUTCFullYear() !== y || parsed.getUTCMonth() !== m - 1 || parsed.getUTCDate() !== d) {
+    return "";
+  }
+  return trimmed;
+}
+
+function formatDateFr(isoDate) {
+  const normalized = normalizeHireDate(isoDate);
+  if (!normalized) {
+    return "";
+  }
+  const [y, m, d] = normalized.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function getSeniorityReferenceDate() {
+  const firstMonth = monthDefs[0]?.key;
+  if (!firstMonth) {
+    return new Date();
+  }
+  const [yearText, monthText] = firstMonth.split("-");
+  const year = Number(yearText);
+  const monthIndex = Number(monthText) - 1;
+  return new Date(year, monthIndex, 1);
+}
+
+function getFullYearsBetween(startIso, endDate) {
+  const normalized = normalizeHireDate(startIso);
+  if (!normalized) {
+    return 0;
+  }
+  const [y, m, d] = normalized.split("-").map(Number);
+  const start = new Date(y, m - 1, d);
+  let years = endDate.getFullYear() - start.getFullYear();
+  const hasAnniversaryPassed =
+    endDate.getMonth() > start.getMonth() ||
+    (endDate.getMonth() === start.getMonth() && endDate.getDate() >= start.getDate());
+  if (!hasAnniversaryPassed) {
+    years -= 1;
+  }
+  return Math.max(0, years);
+}
+
 function createEmptyState() {
   const data = {};
   const initialBalances = {};
@@ -2356,9 +2493,18 @@ function ensureStateShape(input) {
   // Si l'état distant contient une liste de collaborateurs, on l'adopte
   // comme source de vérité avant de construire la structure data/balances.
   if (input && typeof input === "object" && Array.isArray(input.employees) && input.employees.length > 0) {
+    const currentHireDateByName = new Map(
+      employees
+        .filter((e) => e && typeof e.name === "string")
+        .map((e) => [e.name, normalizeHireDate(e.hireDate)])
+    );
     const cleaned = input.employees
       .filter((e) => e && typeof e.name === "string" && e.name.trim())
-      .map((e) => ({ name: e.name.trim(), team: e.team === "N2" ? "N2" : "N1" }));
+      .map((e) => ({
+        name: e.name.trim(),
+        team: e.team === "N2" ? "N2" : "N1",
+        hireDate: normalizeHireDate(e.hireDate) || currentHireDateByName.get(e.name.trim()) || ""
+      }));
     if (cleaned.length > 0) {
       employees.length = 0;
       employees.push(...cleaned);

@@ -16,7 +16,7 @@ L'intégralité de l'application tient dans un seul fichier `index.html`
 - Saisie en **plage de dates** (même collaborateur) avec option **Jours ouvrés uniquement** et application en lot
 - Demi-journées affichées sous forme de **cellule divisée** (code en haut pour la matinée, en bas pour l'après-midi) — décompte 0.5
 - Totaux mensuels par collaborateur et lignes **Présents** par équipe + global
-- Récap annuel avec soldes initiaux (CP, RTT, FR), reliquats, soldes restants
+- Récap annuel avec date d'embauche, ancienneté (ans), soldes initiaux (CP, RTT, FR), reliquats, soldes restants
 - Gestion des collaborateurs (ajout / modification / suppression)
 - Jours fériés français de la période identifiés et non modifiables
 - Samedis / dimanches grisés et non modifiables
@@ -121,6 +121,9 @@ JSONbin :
 - `initialBalances` : soldes annuels initiaux + reliquats de l'année
   précédente, par collaborateur.
 
+La date d'embauche est portée dans `employees` et se modifie depuis la gestion
+des collaborateurs.
+
 Une copie est conservée localement dans le `localStorage` (clé
 `gestion-conges-shared-cache-v1`) pour permettre un affichage instantané au
 chargement.
@@ -162,3 +165,6 @@ s'affichent pas comme codes distincts :
   les totaux ; la couleur orange permet uniquement de les distinguer
   visuellement.
 - Les soldes initiaux sont uniquement modifiables depuis le récap annuel.
+- La colonne **Ancienneté (ans)** du récap annuel affiche l'ancienneté en années
+  complètes à la date de début de période d'acquisition (01/06), à partir de la
+  date d'embauche.
