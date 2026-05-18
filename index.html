@@ -1275,6 +1275,10 @@ function syncUiState() {
   appStatus.className = `app-status ${appContext.statusTone}`.trim();
   clearMonthBtn.disabled = !appContext.canEdit;
   rangeModeBtn.disabled = !appContext.canEdit;
+  manageEmployeesBtn.disabled = !appContext.canEdit;
+  if (!appContext.canEdit) {
+    closeEmployeeModal();
+  }
   updateRangeModeUi();
 }
 
@@ -1346,6 +1350,9 @@ function saveCachedSharedState(nextState) {
 }
 
 function openEmployeeModal() {
+  if (!appContext.canEdit) {
+    return;
+  }
   editingEmployeeIndex = -1;
   employeeName.value = "";
   employeeTeam.value = "N1";
@@ -1387,6 +1394,9 @@ function renderEmployeeList() {
 }
 
 function editEmployee(index) {
+  if (!appContext.canEdit) {
+    return;
+  }
   editingEmployeeIndex = index;
   const emp = employees[index];
   employeeName.value = emp.name;
@@ -1409,6 +1419,9 @@ function cancelEmployeeEdit() {
 }
 
 function addOrUpdateEmployee() {
+  if (!appContext.canEdit) {
+    return;
+  }
   const name = employeeName.value.trim();
   const team = employeeTeam.value;
 
@@ -1468,6 +1481,9 @@ function addOrUpdateEmployee() {
 }
 
 function deleteEmployee(index) {
+  if (!appContext.canEdit) {
+    return;
+  }
   const emp = employees[index];
   const isConfirmed = window.confirm(`Êtes-vous sûr de vouloir supprimer ${emp.name} ?`);
   if (!isConfirmed) {

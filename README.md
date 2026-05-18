@@ -65,7 +65,8 @@ https://dude-freemedoc.github.io/conges-rtt/?key=LA_CLE_MAITRE_JSONBIN
   conservée dans le `localStorage` du navigateur, pas besoin de la remettre
   ensuite. Statut affiché : `Mode collaboratif actif (ÉDITEUR)`.
 - **Lecteurs** (sans clé) : consultation seule. Tous les boutons de
-  modification sont désactivés. Statut : `Mode collaboratif actif (LECTEUR)`.
+  modification sont désactivés, y compris la gestion des collaborateurs
+  (ouverture de la modale bloquée). Statut : `Mode collaboratif actif (LECTEUR)`.
 
 ### Synchronisation
 
