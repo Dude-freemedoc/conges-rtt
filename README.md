@@ -13,6 +13,7 @@ L'intégralité de l'application tient dans un seul fichier `index.html`
 
 - Planning mensuel par collaborateur (lignes) × jours du mois (colonnes)
 - Sélection en 2 étapes : **durée** (Journée / Matinée / Après-midi) puis **type** (CP, RTT, FR, CSS, FAM, PM, MAL, DIV, RC, plus une variante « provisoire » pour CP et RTT)
+- Saisie en **plage de dates** (même collaborateur) avec option **Jours ouvrés uniquement** et application en lot
 - Demi-journées affichées sous forme de **cellule divisée** (code en haut pour la matinée, en bas pour l'après-midi) — décompte 0.5
 - Totaux mensuels par collaborateur et lignes **Présents** par équipe + global
 - Récap annuel avec soldes initiaux (CP, RTT, FR), reliquats, soldes restants
@@ -81,6 +82,10 @@ gratuit), la synchronisation est volontairement minimaliste :
   2. Fusion : seules les modifications locales (par rapport à l'état chargé
      au départ) sont appliquées par-dessus
   3. `PUT` de l'état fusionné
+
+  Le mode plage applique plusieurs cellules en mémoire puis déclenche un
+  unique enregistrement, ce qui réduit les requêtes et limite les risques de
+  conflits lors de saisies rapides.
 
   Cela évite qu'un éditeur écrase silencieusement les modifications d'un
   autre éditeur travaillant en parallèle (« last write wins »). Tant que
