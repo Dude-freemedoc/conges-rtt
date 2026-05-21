@@ -166,7 +166,7 @@ s'affichent pas comme codes distincts :
   visuellement.
 - Les soldes initiaux sont uniquement modifiables depuis le récap annuel.
 - La colonne **Ancienneté (ans)** du récap annuel affiche l'ancienneté en années
-  complètes à la date de début de période d'acquisition (01/06), à partir de la
+  complètes à la date de fin de période d'acquisition (31/05), à partir de la
   date d'embauche.
 - La colonne **CP ancienneté** applique le barème Syntec (5/10/15/20 ans =
   1/2/3/4 jours) et est intégrée au calcul de **CP restant**.

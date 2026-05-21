@@ -2457,7 +2457,7 @@ function getSeniorityReferenceDate() {
   const [yearText, monthText] = firstMonth.split("-");
   const year = Number(yearText);
   const monthIndex = Number(monthText) - 1;
-  return new Date(year, monthIndex, 1);
+  return new Date(year, monthIndex, 0);
 }
 
 function getFullYearsBetween(startIso, endDate) {
