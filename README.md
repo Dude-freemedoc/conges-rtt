@@ -1,30 +1,30 @@
-# Gestion Conges / RTT
+# Gestion Congés / RTT
 
-Application web legere (HTML/CSS/JS, sans build) pour la gestion collaborative
-des conges/RTT des equipes Support N1 et N2 sur la periode Juin 2026 -> Mai
+Application web légère (HTML/CSS/JS, sans build) pour la gestion collaborative
+des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 2027.
 
-## Fonctionnalites
+## Fonctionnalités
 
 - Planning mensuel par collaborateur (jours ouvrables)
-- Selection du code d'absence avec journee, matinee, apres-midi
+- Sélection du code d'absence avec journée, matinée, après-midi
 - Saisie en plage de dates (mode plage)
-- Totaux mensuels par collaborateur et lignes "Presents" equipe/global
-- Recap annuel avec :
+- Totaux mensuels par collaborateur et lignes "Présents" équipe/global
+- Récap annuel avec :
 	- date d'embauche
-	- anciennete (ans)
-	- CP anciennete (barreme Syntec)
+	- ancienneté (ans)
+	- CP ancienneté (barème Syntec)
 	- soldes initiaux et soldes restants
-- Gestion des collaborateurs (nom, equipe, date d'embauche)
+- Gestion des collaborateurs (nom, équipe, date d'embauche)
 
-## Stockage et resilence
+## Stockage et résilience
 
 - Stockage principal : Supabase
-- Secours partage : JSONbin
+- Secours partagé : JSONbin
 - Secours local : localStorage (cache + historique roulant)
 
-En cas d'indisponibilite du stockage principal, l'application bascule
-automatiquement vers le secours puis vers le local si necessaire.
+En cas d'indisponibilité du stockage principal, l'application bascule
+automatiquement vers le secours puis vers le local si nécessaire.
 
 Configuration Supabase attendue :
 - table `shared_state`
@@ -35,14 +35,14 @@ Configuration Supabase attendue :
 
 - Modificateur : consultation + modification
 - Lecture seule : consultation uniquement
-- Local : utilisation sur le poste courant en cas d'indisponibilite du partage
+- Local : utilisation sur le poste courant en cas d'indisponibilité du partage
 
-## Regles de calcul
+## Règles de calcul
 
-- Les demi-journees comptent 0.5
-- CP provisoire et RTT provisoire sont comptes comme CP/RTT
-- Anciennete calculee au 31/05
-- CP anciennete Syntec : 5/10/15/20 ans = 1/2/3/4 jours
+- Les demi-journées comptent 0.5
+- CP provisoire et RTT provisoire sont comptés comme CP/RTT
+- Ancienneté calculée au 31/05
+- CP ancienneté Syntec : 5/10/15/20 ans = 1/2/3/4 jours (barème)
 
 ## Lancement
 
