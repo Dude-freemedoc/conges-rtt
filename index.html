@@ -523,6 +523,21 @@ tr.team-member.team-n2.row-odd td.sticky-2 {
   background: #ffd8bb;
 }
 
+#annualTable tr.team-member td {
+  font-weight: 600;
+}
+
+#annualTable tr.annual-total-row td {
+  background: #eef5fb;
+  font-weight: 700;
+  color: #1f4877;
+}
+
+#planningTable tr.team-member td.sticky,
+#planningTable tr.team-member td.sticky-2 {
+  font-weight: 600;
+}
+
 tr.presence-row td {
   background: #edf4ff;
   font-weight: 700;
@@ -550,8 +565,8 @@ td.presence-cell.presence-end {
 
 #planningTable.compact th,
 #planningTable.compact td {
-  padding: 1px 2px;
-  font-size: 0.68rem;
+  padding: 2px 2px;
+  font-size: 0.7rem;
 }
 
 #planningTable.compact th.name,
@@ -582,9 +597,9 @@ td.presence-cell.presence-end {
 .code-chip {
   display: block;
   width: 100%;
-  font-size: 0.6rem;
+  font-size: 0.64rem;
   font-weight: 700;
-  line-height: 18px;
+  line-height: 22px;
   text-align: center;
   color: inherit;
   white-space: nowrap;
@@ -596,7 +611,7 @@ td.day-cell {
   line-height: 1;
   position: relative;
   overflow: hidden;
-  height: 20px;
+  height: 24px;
 }
 
 td.day-cell.half-day {
@@ -615,7 +630,7 @@ td.day-cell.range-preview {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.6rem;
+  font-size: 0.64rem;
   font-weight: 700;
   line-height: 1;
   color: inherit;
@@ -2217,6 +2232,100 @@ function resolvePickerCode(baseCode, durationKey) {
   return baseCode;
 }
 
+function isAfternoonCode(code) {
+  return typeof code === "string" && code.endsWith("am");
+}
+
+function isMorningCode(code) {
+  return typeof code === "string" && code.endsWith("m") && !code.endsWith("am");
+}
+
+function isHalfDayCode(code) {
+  return isMorningCode(code) || isAfternoonCode(code);
+}
+
+function isCompositeDayCode(value) {
+  return typeof value === "string" && value.includes("+");
+}
+
+function splitDayCodes(value) {
+  if (!value || typeof value !== "string") {
+    return [];
+  }
+  if (value.includes("+")) {
+    return value
+      .split("+")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [value];
+}
+
+function getBaseCode(code) {
+  if (!code) return "";
+  if (isAfternoonCode(code)) return code.slice(0, -2);
+  if (isMorningCode(code)) return code.slice(0, -1);
+  return code;
+}
+
+function dayCodeToHalfMap(value) {
+  const halves = { am: "", pm: "" };
+  for (const code of splitDayCodes(value)) {
+    if (isMorningCode(code)) {
+      halves.am = code;
+      continue;
+    }
+    if (isAfternoonCode(code)) {
+      halves.pm = code;
+      continue;
+    }
+    const base = getBaseCode(code);
+    halves.am = resolvePickerCode(base, "am");
+    halves.pm = resolvePickerCode(base, "pm");
+  }
+  return halves;
+}
+
+function composeDayValue(halves) {
+  const amCode = halves.am || "";
+  const pmCode = halves.pm || "";
+
+  if (amCode && pmCode) {
+    const baseAm = getBaseCode(amCode);
+    const basePm = getBaseCode(pmCode);
+    if (
+      baseAm &&
+      baseAm === basePm &&
+      amCode === resolvePickerCode(baseAm, "am") &&
+      pmCode === resolvePickerCode(baseAm, "pm")
+    ) {
+      return baseAm;
+    }
+    return `${amCode}+${pmCode}`;
+  }
+
+  if (amCode) return amCode;
+  if (pmCode) return pmCode;
+  return "";
+}
+
+function setDayCodeValue(currentValue, code, durationKey) {
+  if (!code) {
+    return "";
+  }
+  if (durationKey === "day") {
+    return code;
+  }
+
+  const halves = dayCodeToHalfMap(currentValue);
+  if (durationKey === "am") {
+    halves.am = code;
+  } else if (durationKey === "pm") {
+    halves.pm = code;
+  }
+  return composeDayValue(halves);
+}
+
 function setupPicker() {
   const picker = document.getElementById("codePicker");
   picker.innerHTML = "";
@@ -2278,14 +2387,16 @@ function setupPicker() {
         const endDay = Number(picker.dataset.rangeEndDay || "0");
         const onlyWorkingDays = picker.dataset.rangeWorkingDaysOnly === "1";
         if (startDay > 0 && endDay > 0) {
-          applyCodeToRange(empName, startDay, endDay, code, onlyWorkingDays);
+          applyCodeToRange(empName, startDay, endDay, code, onlyWorkingDays, durationKey);
         }
       } else {
         const day = picker.dataset.day;
-        if (!code) {
+        const currentValue = state.data[empName][selectedMonth][day] || "";
+        const nextValue = setDayCodeValue(currentValue, code, durationKey);
+        if (!nextValue) {
           delete state.data[empName][selectedMonth][day];
         } else {
-          state.data[empName][selectedMonth][day] = code;
+          state.data[empName][selectedMonth][day] = nextValue;
         }
       }
 
@@ -2334,7 +2445,7 @@ function closePicker() {
   if (picker) picker.style.display = "none";
 }
 
-function applyCodeToRange(name, startDay, endDay, code, onlyWorkingDays) {
+function applyCodeToRange(name, startDay, endDay, code, onlyWorkingDays, durationKey = "day") {
   const [yearText, monthText] = selectedMonth.split("-");
   const year = Number(yearText);
   const monthIndex = Number(monthText) - 1;
@@ -2348,23 +2459,14 @@ function applyCodeToRange(name, startDay, endDay, code, onlyWorkingDays) {
       continue;
     }
     const dayKey = String(day);
-    if (!code) {
+    const currentValue = state.data[name][selectedMonth][dayKey] || "";
+    const nextValue = setDayCodeValue(currentValue, code, durationKey);
+    if (!nextValue) {
       delete state.data[name][selectedMonth][dayKey];
     } else {
-      state.data[name][selectedMonth][dayKey] = code;
+      state.data[name][selectedMonth][dayKey] = nextValue;
     }
   }
-}
-
-function extractCodeInfo(code) {
-  if (!code) return { baseCode: "", duration: "day" };
-  
-  if (code.endsWith("am")) {
-    return { baseCode: code.slice(0, -2), duration: "pm" };
-  } else if (code.endsWith("m")) {
-    return { baseCode: code.slice(0, -1), duration: "am" };
-  }
-  return { baseCode: code, duration: "day" };
 }
 
 function getDisplayLabel(baseCode) {
@@ -2411,11 +2513,6 @@ function renderPlanning() {
   const tbody = document.createElement("tbody");
 
   for (const team of teams) {
-    const teamRow = document.createElement("tr");
-    teamRow.className = "team-separator";
-    teamRow.innerHTML = `<td class="sticky name">-- SUPPORT ${team} --</td><td class="sticky-2"></td><td colspan="${9 + days}"></td>`;
-    tbody.appendChild(teamRow);
-
     const teamMembers = employees.filter((e) => e.team === team);
     for (let empIdx = 0; empIdx < teamMembers.length; empIdx += 1) {
       const employee = teamMembers[empIdx];
@@ -2442,31 +2539,36 @@ function renderPlanning() {
         }
 
         const current = state.data[name][selectedMonth][String(day)] || "";
-        const codeInfo = extractCodeInfo(current);
-        const displayLabel = getDisplayLabel(codeInfo.baseCode);
-        if (codeInfo.duration === "day" || !current) {
+        const isFullDayCode = Boolean(current) && !isHalfDayCode(current) && !isCompositeDayCode(current);
+        if (!current || isFullDayCode) {
+          const displayLabel = getDisplayLabel(getBaseCode(current));
           applyCodeColor(td, current);
           const chip = document.createElement("div");
           chip.className = "code-chip";
           chip.textContent = displayLabel;
           td.appendChild(chip);
         } else {
+          const halves = dayCodeToHalfMap(current);
           applyCodeColor(td, "");
           td.classList.add("half-day");
-          const colorClass = codeColorClass[current] || "";
+
+          const topCode = halves.am;
           const topHalf = document.createElement("div");
           topHalf.className = "code-chip-half top";
-          if (codeInfo.duration === "am") {
-            topHalf.textContent = displayLabel;
-            if (colorClass) topHalf.classList.add(colorClass);
+          if (topCode) {
+            topHalf.textContent = getDisplayLabel(getBaseCode(topCode));
+            const topColorClass = codeColorClass[topCode] || "";
+            if (topColorClass) topHalf.classList.add(topColorClass);
           }
           td.appendChild(topHalf);
 
+          const bottomCode = halves.pm;
           const bottomHalf = document.createElement("div");
           bottomHalf.className = "code-chip-half bottom";
-          if (codeInfo.duration === "pm") {
-            bottomHalf.textContent = displayLabel;
-            if (colorClass) bottomHalf.classList.add(colorClass);
+          if (bottomCode) {
+            bottomHalf.textContent = getDisplayLabel(getBaseCode(bottomCode));
+            const bottomColorClass = codeColorClass[bottomCode] || "";
+            if (bottomColorClass) bottomHalf.classList.add(bottomColorClass);
           }
           td.appendChild(bottomHalf);
         }
@@ -2610,10 +2712,12 @@ function computeMonthTotals(name, monthKey) {
   const cells = state.data[name][monthKey];
 
   for (const value of Object.values(cells)) {
-    if (!value || !codeToWeight[value]) continue;
-    const weight = codeToWeight[value];
-    for (const [bucket, amount] of Object.entries(weight)) {
-      totals[bucket] += amount;
+    for (const code of splitDayCodes(value)) {
+      if (!code || !codeToWeight[code]) continue;
+      const weight = codeToWeight[code];
+      for (const [bucket, amount] of Object.entries(weight)) {
+        totals[bucket] += amount;
+      }
     }
   }
   return totals;
@@ -2636,6 +2740,87 @@ function computeAnnualTotals(name) {
     }
   }
   return annual;
+}
+
+function computeAnnualSummary(members) {
+  const summary = {
+    seniorityCP: 0,
+    reliquatCP: 0,
+    reliquatRTT: 0,
+    initCP: 0,
+    initRTT: 0,
+    initFR: 0,
+    restantCP: 0,
+    restantRTT: 0,
+    restantFR: 0,
+    usedCP: 0,
+    usedRTT: 0,
+    usedFR: 0,
+    usedCSS: 0,
+    usedFAM: 0,
+    usedPM: 0,
+    usedMAL: 0,
+    usedRC: 0,
+    usedDIV: 0
+  };
+
+  for (const member of members) {
+    const totals = computeAnnualTotals(member.name);
+    const initial = state.initialBalances[member.name];
+    const seniorityYears = getFullYearsBetween(member.hireDate, getSeniorityReferenceDate());
+    const seniorityCpDays = computeSyntecAdditionalCpDays(seniorityYears);
+
+    summary.seniorityCP += seniorityCpDays;
+    summary.reliquatCP += initial.reliquatCP;
+    summary.reliquatRTT += initial.reliquatRTT;
+    summary.initCP += initial.CP;
+    summary.initRTT += initial.RTT;
+    summary.initFR += initial.FR;
+    summary.restantCP += initial.reliquatCP + initial.CP + seniorityCpDays - totals.CP;
+    summary.restantRTT += initial.reliquatRTT + initial.RTT - totals.RTT;
+    summary.restantFR += initial.FR - totals.FR;
+    summary.usedCP += totals.CP;
+    summary.usedRTT += totals.RTT;
+    summary.usedFR += totals.FR;
+    summary.usedCSS += totals.CSS;
+    summary.usedFAM += totals.FAM;
+    summary.usedPM += totals.PM;
+    summary.usedMAL += totals.MAL;
+    summary.usedRC += totals.RC;
+    summary.usedDIV += totals.DIV;
+  }
+
+  return summary;
+}
+
+function createAnnualTotalRow(label, summary) {
+  const tr = document.createElement("tr");
+  tr.className = "annual-total-row";
+  tr.innerHTML = `
+    <td class="sticky name">${label}</td>
+    <td class="sticky-2"></td>
+    <td></td>
+    <td></td>
+    <td>${round2(summary.seniorityCP)}</td>
+    <td>${round2(summary.reliquatCP)}</td>
+    <td>${round2(summary.reliquatRTT)}</td>
+    <td>${round2(summary.initCP)}</td>
+    <td>${round2(summary.initRTT)}</td>
+    <td>${round2(summary.initFR)}</td>
+    <td>${round2(summary.restantCP)}</td>
+    <td>${round2(summary.restantRTT)}</td>
+    <td>${round2(summary.restantFR)}</td>
+    <td>${round2(summary.usedCP)}</td>
+    <td>${round2(summary.usedRTT)}</td>
+    <td>${round2(summary.usedFR)}</td>
+    <td>${round2(summary.usedCSS)}</td>
+    <td>${round2(summary.usedFAM)}</td>
+    <td>${round2(summary.usedPM)}</td>
+    <td>${round2(summary.usedMAL)}</td>
+    <td>${round2(summary.usedRC)}</td>
+    <td>${round2(summary.usedDIV)}</td>
+  `;
+  return tr;
 }
 
 function renderAnnual() {
@@ -2673,11 +2858,6 @@ function renderAnnual() {
 
   const tbody = document.createElement("tbody");
   for (const team of teams) {
-    const teamRow = document.createElement("tr");
-    teamRow.className = "team-separator";
-    teamRow.innerHTML = '<td class="sticky name">-- SUPPORT ' + team + ' --</td><td class="sticky-2"></td><td></td><td></td><td></td><td colspan="17"></td>';
-    tbody.appendChild(teamRow);
-
     const teamMembers = employees.filter((e) => e.team === team);
     for (let empIdx = 0; empIdx < teamMembers.length; empIdx += 1) {
       const employee = teamMembers[empIdx];
@@ -2687,7 +2867,7 @@ function renderAnnual() {
       const seniorityYears = getFullYearsBetween(employee.hireDate, getSeniorityReferenceDate());
       const seniorityCpDays = computeSyntecAdditionalCpDays(seniorityYears);
       const tr = document.createElement("tr");
-      tr.className = empIdx % 2 === 0 ? "row-even" : "row-odd";
+      tr.className = `team-member team-${employee.team.toLowerCase()} ${empIdx % 2 === 0 ? "row-even" : "row-odd"}`;
       const disabledAttr = appContext.canEdit ? "" : "disabled";
       tr.innerHTML = `
         <td class="sticky name">${name}</td>
@@ -2729,7 +2909,13 @@ function renderAnnual() {
 
       tbody.appendChild(tr);
     }
+
+    const teamSummary = computeAnnualSummary(teamMembers);
+    tbody.appendChild(createAnnualTotalRow(`Total ${team}`, teamSummary));
   }
+
+  const supportSummary = computeAnnualSummary(employees);
+  tbody.appendChild(createAnnualTotalRow("Total Support", supportSummary));
 
   annualTable.appendChild(tbody);
 }
