@@ -86,10 +86,16 @@ body {
   font-size: 0.86rem;
 }
 
+.app-status.edit {
+  background: #edf8f1;
+  border-color: #b9dec6;
+  color: #1f5c35;
+}
+
 .app-status.readonly {
-  background: #fff7ea;
-  border-color: #f0d19f;
-  color: #7b5520;
+  background: #f1f7ff;
+  border-color: #c9dcf3;
+  color: #1f4f7a;
 }
 
 .app-status.error {
@@ -132,6 +138,18 @@ h2 {
   align-items: end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.header-actions .app-status {
+  width: fit-content;
+  max-width: min(100%, 680px);
 }
 
 .app-header {
@@ -812,6 +830,16 @@ hr {
     align-items: flex-start;
   }
 
+  .header-actions {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .header-actions .app-status {
+    width: 100%;
+    max-width: none;
+  }
+
   th,
   td {
     font-size: 0.72rem;
@@ -827,25 +855,26 @@ hr {
     <main class="app-shell">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Planning équipe</p>
+          <p class="eyebrow">Planning équipe Support</p>
           <h1>Gestion Congés / RTT</h1>
           <p class="subtitle">Période Juin 2026 -> Mai 2027</p>
         </div>
-        <div class="toolbar">
-          <label>
-            Mois
-            <select id="monthSelect"></select>
-          </label>
-          <button id="rangeModeBtn" type="button" disabled>Mode plage : OFF</button>
-          <label class="toolbar-check">
-            <input id="rangeWorkingDaysOnly" type="checkbox" checked disabled />
-            Jours ouvrés uniquement
-          </label>
-          <button id="manageEmployeesBtn" type="button" disabled>Gérer collaborateurs</button>
+        <div class="header-actions">
+          <section id="appStatus" class="app-status"></section>
+          <div class="toolbar">
+            <label>
+              Mois
+              <select id="monthSelect"></select>
+            </label>
+            <button id="rangeModeBtn" type="button" disabled>Mode plage : OFF</button>
+            <label class="toolbar-check">
+              <input id="rangeWorkingDaysOnly" type="checkbox" checked disabled />
+              Jours ouvrés uniquement
+            </label>
+            <button id="manageEmployeesBtn" type="button" disabled>Gérer collaborateurs</button>
+          </div>
         </div>
       </header>
-
-      <section id="appStatus" class="app-status"></section>
 
       <section class="legend" id="legend"></section>
 
@@ -899,6 +928,9 @@ hr {
 const STORAGE_KEY = "gestion-conges-v1";
 const SHARED_CACHE_KEY = "gestion-conges-shared-cache-v1";
 const HIRE_DATE_MIGRATION_KEY = "gestion-conges-hiredate-migrated-v1";
+const BACKUP_HISTORY_KEY = "gestion-conges-backups-v1";
+const BACKUP_HISTORY_LIMIT = 10;
+const SHARED_BACKUP_LIMIT = 5;
 
 // ── Configuration JSONbin.io ──────────────────────────────────────────────────
 // 1. Créez un compte gratuit sur https://jsonbin.io
@@ -909,6 +941,17 @@ const HIRE_DATE_MIGRATION_KEY = "gestion-conges-hiredate-migrated-v1";
 //    - Créez un Access Key   → mettez-le dans JSONBIN_ACCESS_KEY (lecture seule)
 const JSONBIN_BIN_ID     = "69f9ec02856a682189abd3e2"; // ← Bin ID
 const JSONBIN_ACCESS_KEY = "$2a$10$ZBhZnz4ly/b06u2KC8ly3uJalID..HIv8ac/qqwj7/4PnTzm1dfjS"; // ← Access Key (lecture seule, visible dans l'app)
+
+// ── Configuration Supabase (principal) ───────────────────────────────────────
+// 1. Créez un projet Supabase
+// 2. Créez une table `shared_state` avec au minimum :
+//    - `id` integer primary key
+//    - `state` jsonb not null
+// 3. Renseignez l'URL du projet et la clé `anon` ci-dessous.
+const SUPABASE_URL = "https://vjfpyvasczlinwutqvju.supabase.co"; // ex: https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = "sb_publishable_kpz7fEMO4TUtuVtgPehE8g_6jYvqDsW"; // clé anon publique du projet
+const SUPABASE_TABLE = "shared_state";
+const SUPABASE_ROW_ID = 1;
 
 const monthDefs = [
   { key: "2026-06", label: "Juin 2026" },
@@ -1085,7 +1128,7 @@ let appContext = {
   canEdit: false,
   currentUser: "",
   statusTone: "",
-  statusMessage: "Initialisation en cours...",
+  statusMessage: "Ouverture du planning en cours...",
   baseState: null,
   pendingPersist: Promise.resolve(),
   latestPersistId: 0
@@ -1222,8 +1265,9 @@ async function bootstrapDataProvider() {
   const cachedSharedState = loadCachedSharedState();
   if (cachedSharedState) {
     state = cachedSharedState;
+    saveBackupSnapshot(state, "cache partagé");
     appContext.statusTone = "";
-    appContext.statusMessage = "Chargement des données partagées...";
+    appContext.statusMessage = "Chargement du planning...";
     syncUiState();
     renderPlanning();
     renderAnnual();
@@ -1237,18 +1281,17 @@ async function bootstrapDataProvider() {
     state = await appContext.provider.loadState();
     appContext.baseState = cloneState(state);
     saveCachedSharedState(state);
+    saveBackupSnapshot(state, appContext.provider.mode === "local" ? "chargement local" : "chargement partagé");
 
-    if (appContext.provider.mode === "jsonbin") {
-      appContext.statusTone = "";
-      if (appContext.canEdit) {
-        appContext.statusMessage = "Mode collaboratif actif (ÉDITEUR). Vos modifications sont partagées immédiatement.";
-      } else {
-        appContext.statusTone = "readonly";
-        appContext.statusMessage = "Mode collaboratif actif (LECTEUR). Consultation seule. Données rafraîchies au chargement et au retour sur l'onglet.";
-      }
+    if (appContext.provider.mode === "local") {
+      appContext.statusTone = "edit";
+      appContext.statusMessage = "Mode local actif. Les données restent sur ce poste uniquement.";
+    } else if (appContext.canEdit) {
+      appContext.statusTone = "edit";
+      appContext.statusMessage = "Planning connecté. Vous pouvez consulter et modifier.";
     } else {
-      appContext.statusTone = "";
-      appContext.statusMessage = "Mode local actif. Les données restent dans ce navigateur uniquement.";
+      appContext.statusTone = "readonly";
+      appContext.statusMessage = "Planning connecté en lecture seule.";
     }
   } catch (error) {
     console.error("Initialisation impossible", error);
@@ -1257,7 +1300,7 @@ async function bootstrapDataProvider() {
     appContext.canEdit = true;
     state = await appContext.provider.loadState();
     appContext.statusTone = "error";
-    appContext.statusMessage = "Echec de la connexion au stockage partagé. Les données restent locales dans ce navigateur.";
+    appContext.statusMessage = "Connexion au planning partagé indisponible. Passage en mode local sur ce poste.";
   }
 
   syncUiState();
@@ -1268,7 +1311,7 @@ async function bootstrapDataProvider() {
 }
 
 async function maybeMigrateHireDatesToSharedState() {
-  if (appContext.provider?.mode !== "jsonbin" || !appContext.canEdit) {
+  if (appContext.provider?.mode === "local" || !appContext.canEdit) {
     return;
   }
 
@@ -1375,12 +1418,12 @@ function loadCachedSharedState() {
   try {
     const raw = localStorage.getItem(SHARED_CACHE_KEY);
     if (!raw) {
-      return null;
+      return loadLatestBackupState();
     }
     return ensureStateShape(JSON.parse(raw));
   } catch (e) {
     console.warn("Cache partagé invalide, réinitialisation", e);
-    return null;
+    return loadLatestBackupState();
   }
 }
 
@@ -1389,6 +1432,82 @@ function saveCachedSharedState(nextState) {
     localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(nextState));
   } catch (e) {
     console.warn("Impossible de sauvegarder le cache partagé", e);
+  }
+}
+
+function hasUsableSharedData(input) {
+  return Boolean(input && typeof input === "object" && input.data && typeof input.data === "object" && Object.keys(input.data).length > 0);
+}
+
+function createBackupStateSnapshot(sourceState) {
+  const snapshot = cloneState(sourceState);
+  snapshot.backups = [];
+  return snapshot;
+}
+
+function normalizeBackupEntries(rawBackups) {
+  if (!Array.isArray(rawBackups)) {
+    return [];
+  }
+
+  return rawBackups
+    .filter((entry) => entry && typeof entry === "object" && entry.state && typeof entry.state === "object")
+    .map((entry) => ({
+      ts: typeof entry.ts === "string" ? entry.ts : new Date().toISOString(),
+      label: typeof entry.label === "string" && entry.label.trim() ? entry.label.trim() : "sauvegarde",
+      state: createBackupStateSnapshot(entry.state)
+    }))
+    .slice(0, SHARED_BACKUP_LIMIT);
+}
+
+function appendSharedBackup(targetState, label) {
+  const history = normalizeBackupEntries(targetState.backups);
+  history.unshift({
+    ts: new Date().toISOString(),
+    label: label || "sauvegarde",
+    state: createBackupStateSnapshot(targetState)
+  });
+  targetState.backups = history.slice(0, SHARED_BACKUP_LIMIT);
+}
+
+function loadBackupHistory() {
+  try {
+    const raw = localStorage.getItem(BACKUP_HISTORY_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn("Historique de sauvegardes invalide, réinitialisation", e);
+    return [];
+  }
+}
+
+function loadLatestBackupState() {
+  const history = loadBackupHistory();
+  if (history.length === 0 || !history[0]?.state) {
+    return null;
+  }
+  try {
+    return ensureStateShape(history[0].state);
+  } catch (e) {
+    console.warn("Dernière sauvegarde invalide", e);
+    return null;
+  }
+}
+
+function saveBackupSnapshot(nextState, label) {
+  try {
+    const history = loadBackupHistory();
+    history.unshift({
+      ts: new Date().toISOString(),
+      label: label || "sauvegarde",
+      state: cloneState(nextState)
+    });
+    localStorage.setItem(BACKUP_HISTORY_KEY, JSON.stringify(history.slice(0, BACKUP_HISTORY_LIMIT)));
+  } catch (e) {
+    console.warn("Impossible de créer la sauvegarde automatique", e);
   }
 }
 
@@ -1572,6 +1691,10 @@ function createLocalProvider() {
           console.warn("État local invalide, réinitialisation", err);
         }
       }
+      const backup = loadLatestBackupState();
+      if (backup) {
+        return backup;
+      }
       return createEmptyState();
     },
     async saveSnapshot(nextState) {
@@ -1581,6 +1704,14 @@ function createLocalProvider() {
 }
 
 async function createDataProvider() {
+  if (detectSupabaseContext()) {
+    try {
+      return await createSupabaseProvider();
+    } catch (error) {
+      console.warn("Supabase indisponible, repli JSONbin", error);
+    }
+  }
+
   if (detectJsonbinContext()) {
     try {
       return await createJsonbinProvider();
@@ -1590,6 +1721,94 @@ async function createDataProvider() {
   }
 
   return createLocalProvider();
+}
+
+function detectSupabaseContext() {
+  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+}
+
+async function createSupabaseProvider() {
+  const fallbackJsonbinProvider = detectJsonbinContext() ? await createJsonbinProvider() : null;
+  const baseUrl = SUPABASE_URL.replace(/\/$/, "");
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    "Content-Type": "application/json",
+    Accept: "application/json"
+  };
+
+  const readFallback = async (reason) => {
+    if (!fallbackJsonbinProvider) {
+      throw reason instanceof Error ? reason : new Error(String(reason || "Supabase indisponible"));
+    }
+    console.warn("Supabase indisponible, lecture depuis JSONbin", reason);
+    return fallbackJsonbinProvider.loadState();
+  };
+
+  const writeFallback = async (snapshot, reason) => {
+    if (!fallbackJsonbinProvider) {
+      throw reason instanceof Error ? reason : new Error(String(reason || "Supabase indisponible"));
+    }
+    console.warn("Supabase indisponible, écriture vers JSONbin", reason);
+    await fallbackJsonbinProvider.saveSnapshot(snapshot);
+  };
+
+  return {
+    mode: "supabase",
+    canEdit: !!editorKey,
+    currentUser: "",
+    async loadState() {
+      try {
+        const url = `${baseUrl}/rest/v1/${SUPABASE_TABLE}?id=eq.${SUPABASE_ROW_ID}&select=state`;
+        const response = await fetch(url, { method: "GET", headers, cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Supabase GET échoué (${response.status})`);
+        }
+        const rows = await response.json();
+        const payload = rows?.[0]?.state;
+        if (!payload) {
+          return createEmptyState();
+        }
+        if (!hasUsableSharedData(payload) && Array.isArray(payload.backups)) {
+          const backups = normalizeBackupEntries(payload.backups);
+          if (backups.length > 0) {
+            return ensureStateShape(backups[0].state);
+          }
+        }
+        return ensureStateShape(payload);
+      } catch (error) {
+        return readFallback(error);
+      }
+    },
+    async saveSnapshot(nextState) {
+      if (!editorKey) {
+        appContext.canEdit = false;
+        syncUiState();
+        throw new Error("Clé d'édition requise pour modifier les données");
+      }
+
+      try {
+        const snapshotState = cloneState(nextState);
+        appendSharedBackup(snapshotState, "sauvegarde Supabase");
+        const response = await fetch(`${baseUrl}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
+          method: "POST",
+          headers: {
+            ...headers,
+            Prefer: "resolution=merge-duplicates,return=minimal"
+          },
+          body: JSON.stringify({ id: SUPABASE_ROW_ID, state: snapshotState })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Supabase PUT échoué (${response.status})`);
+        }
+      } catch (error) {
+        const snapshotState = cloneState(nextState);
+        appendSharedBackup(snapshotState, "sauvegarde secours JSONbin");
+        await writeFallback(snapshotState, error);
+      }
+    }
+  };
 }
 
 async function createJsonbinProvider() {
@@ -1614,6 +1833,12 @@ async function createJsonbinProvider() {
       const payload = await response.json();
       if (!payload?.state) {
         return createEmptyState();
+      }
+      if (!hasUsableSharedData(payload.state)) {
+        const backups = normalizeBackupEntries(payload.state.backups);
+        if (backups.length > 0) {
+          return ensureStateShape(backups[0].state);
+        }
       }
       return ensureStateShape(payload.state);
     },
@@ -1672,6 +1897,7 @@ async function doPersistSnapshot(localState, persistId) {
   if (provider.mode !== "jsonbin") {
     await provider.saveSnapshot(localState);
     appContext.baseState = cloneState(localState);
+    saveBackupSnapshot(localState, "sauvegarde locale");
     if (isLatestPersist()) {
       state = cloneState(localState);
       saveCachedSharedState(state);
@@ -1687,6 +1913,7 @@ async function doPersistSnapshot(localState, persistId) {
     console.warn("GET pré-PUT impossible, envoi sans fusion", error);
     await provider.saveSnapshot(localState);
     appContext.baseState = cloneState(localState);
+    saveBackupSnapshot(localState, "sauvegarde secours JSONbin");
     if (isLatestPersist()) {
       state = cloneState(localState);
       saveCachedSharedState(state);
@@ -1698,9 +1925,11 @@ async function doPersistSnapshot(localState, persistId) {
 
   const base = appContext.baseState || cloneState(remote);
   const merged = mergeStates(remote, base, localState);
+  appendSharedBackup(merged, "sauvegarde JSONbin");
 
   await provider.saveSnapshot(merged);
   appContext.baseState = cloneState(merged);
+  saveBackupSnapshot(merged, "sauvegarde JSONbin");
   if (isLatestPersist()) {
     state = merged;
     saveCachedSharedState(state);
@@ -2497,7 +2726,7 @@ function createEmptyState() {
       data[name][month.key] = {};
     }
   }
-  return { data, initialBalances, employees: employees.map((e) => ({ ...e })) };
+  return { data, initialBalances, employees: employees.map((e) => ({ ...e })), backups: [] };
 }
 
 function ensureStateShape(input) {
@@ -2526,6 +2755,9 @@ function ensureStateShape(input) {
 
   const next = createEmptyState();
   if (!input || typeof input !== "object" || !input.data) {
+    if (input && typeof input === "object") {
+      next.backups = normalizeBackupEntries(input.backups);
+    }
     return next;
   }
 
@@ -2561,6 +2793,7 @@ function ensureStateShape(input) {
       }
     }
   }
+  next.backups = normalizeBackupEntries(input.backups);
   return next;
 }
 
