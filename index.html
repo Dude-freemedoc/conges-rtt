@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestion Congés et RTT</title>
+    <title>Gestion des absences</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -80,10 +80,10 @@ body {
 .app-status {
   background: #f7fbff;
   border: 1px solid #d6e6f3;
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 8px 11px;
   color: #24405f;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
 }
 
 .app-status.edit {
@@ -115,17 +115,44 @@ body {
   }
 }
 
-.eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
-  color: var(--ink-muted);
-}
-
 h1,
 h2 {
   margin: 4px 0 8px;
+}
+
+h1 {
+  font-size: 1.5em;
+}
+
+.card-header-with-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card-header-with-controls h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.month-selector {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.month-selector select {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  font-family: inherit;
+  background: white;
+  color: var(--ink);
 }
 
 .subtitle {
@@ -133,26 +160,87 @@ h2 {
   color: var(--ink-muted);
 }
 
+.selection-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.selection-group-label {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.selection-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.selection-buttons button {
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  border-radius: 8px;
+  border: 1px solid #cfdcd4;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 34px;
+  transition: all 80ms;
+}
+
+.selection-buttons button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #f4f8f6;
+}
+
+.selection-buttons button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.selection-buttons button.active-toggle {
+  background: #e7f4eb;
+  color: #1f5c35;
+}
+
 .toolbar {
   display: flex;
-  align-items: end;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
+.toolbar #manageEmployeesBtn {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-color: #cfdcd4;
+}
+
 .header-actions {
   display: flex;
-  flex-direction: column;
   align-items: flex-end;
   gap: 10px;
 }
 
-.header-actions .app-status {
+.app-header .app-status {
   width: fit-content;
-  max-width: min(100%, 680px);
+  max-width: min(100%, 620px);
 }
 
 .app-header {
+  display: block;
+}
+
+.header-top {
   display: flex;
   justify-content: space-between;
   align-items: end;
@@ -199,19 +287,6 @@ button.danger {
 button.active-toggle {
   border-color: #7aa987;
   background: #eaf6ed;
-}
-
-.toolbar-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: var(--ink-muted);
-  user-select: none;
-}
-
-.toolbar-check input {
-  margin: 0;
 }
 
 .legend {
@@ -328,7 +403,6 @@ th.sunday {
 td.holiday,
 th.holiday {
   background: #ffe8bf;
-  box-shadow: inset 0 0 0 1px #f2be63;
 }
 
 td.saturday select,
@@ -428,7 +502,6 @@ tr.team-member.team-n1.row-odd td.holiday,
 tr.team-member.team-n2 td.holiday,
 tr.team-member.team-n2.row-odd td.holiday {
   background: #ffe8bf;
-  box-shadow: inset 0 0 0 1px #f2be63;
 }
 
 tr.team-member.team-n1 td.sticky,
@@ -834,7 +907,7 @@ hr {
     padding: 0 8px;
   }
 
-  .app-header {
+  .header-top {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -844,9 +917,30 @@ hr {
     align-items: flex-start;
   }
 
-  .header-actions .app-status {
+  .toolbar {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .selection-group {
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  .app-header .app-status {
     width: 100%;
     max-width: none;
+  }
+
+  .card-header-with-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .month-selector {
+    width: 100%;
+    justify-content: space-between;
   }
 
   th,
@@ -863,27 +957,35 @@ hr {
 
     <main class="app-shell">
       <header class="app-header">
-        <div>
-          <p class="eyebrow">Planning équipe Support</p>
-          <h1>Gestion Congés / RTT</h1>
-          <p class="subtitle">Période Juin 2026 -> Mai 2027</p>
-        </div>
-        <div class="header-actions">
+        <div class="header-top">
+          <div>
+            <h1>SUPPORT HELLODOC - Gestion des absences</h1>
+            <p class="subtitle">Période de Juin 2026 à Mai 2027</p>
+          </div>
           <section id="appStatus" class="app-status"></section>
-          <div class="toolbar">
-            <label>
-              Mois
-              <select id="monthSelect"></select>
-            </label>
-            <button id="rangeModeBtn" type="button" disabled>Mode plage : OFF</button>
-            <button id="workingDaysOnlyBtn" type="button" disabled>Jours ouvrés : ON</button>
-            <button id="manageEmployeesBtn" type="button" disabled>Gérer collaborateurs</button>
+          <div class="header-actions">
+            <div class="toolbar">
+              <button id="manageEmployeesBtn" type="button" disabled>Gérer collaborateurs</button>
+              <div class="selection-group">
+                <span class="selection-group-label">Type de sélection :</span>
+                <div class="selection-buttons">
+                  <button id="rangeModeBtn" type="button" disabled>Saisie simple</button>
+                  <button id="workingDaysOnlyBtn" type="button" disabled>Jours ouvrés</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
       <section class="card">
-        <h2>Planning mensuel</h2>
+        <div class="card-header-with-controls">
+          <h2>Planning mensuel</h2>
+          <label class="month-selector">
+            Mois :
+            <select id="monthSelect"></select>
+          </label>
+        </div>
         <section class="legend" id="legend"></section>
         <div class="table-wrap">
           <table id="planningTable"></table>
@@ -1136,7 +1238,7 @@ let rangeSelection = {
   startDay: null,
   hoverDay: null
 };
-let workingDaysOnly = true;
+let allowAllDays = false;
 let appContext = {
   provider: null,
   mode: "local",
@@ -1233,7 +1335,7 @@ async function init() {
   });
   workingDaysOnlyBtn.addEventListener("click", () => {
     if (!appContext.canEdit) return;
-    workingDaysOnly = !workingDaysOnly;
+    allowAllDays = !allowAllDays;
     updateRangeModeUi();
     renderPlanning();
   });
@@ -1259,15 +1361,15 @@ async function init() {
 }
 
 function updateRangeModeUi() {
-  rangeModeBtn.textContent = rangeMode ? "Mode plage : ON" : "Mode plage : OFF";
+  rangeModeBtn.textContent = rangeMode ? "Saisie plage" : "Saisie simple";
   rangeModeBtn.classList.toggle("active-toggle", rangeMode);
-  workingDaysOnlyBtn.textContent = workingDaysOnly ? "Jours ouvrés : ON" : "Jours ouvrés : OFF";
-  workingDaysOnlyBtn.classList.toggle("active-toggle", workingDaysOnly);
+  workingDaysOnlyBtn.textContent = allowAllDays ? "Tous les jours" : "Jours ouvrés";
+  workingDaysOnlyBtn.classList.toggle("active-toggle", allowAllDays);
   workingDaysOnlyBtn.disabled = !appContext.canEdit;
   if (!appContext.canEdit) {
     rangeMode = false;
     clearRangeSelection();
-    rangeModeBtn.textContent = "Mode plage : OFF";
+    rangeModeBtn.textContent = "Saisie simple";
     rangeModeBtn.classList.remove("active-toggle");
   }
 }
@@ -2369,7 +2471,7 @@ function renderPlanning() {
           td.appendChild(bottomHalf);
         }
 
-        const isDayEditable = dayType.isWorkingDay || !workingDaysOnly;
+        const isDayEditable = dayType.isWorkingDay || allowAllDays;
         if (isDayEditable) {
           const isRangePreview =
             rangeMode &&
@@ -2414,7 +2516,7 @@ function renderPlanning() {
               mode: "range",
               rangeStartDay: startDay,
               rangeEndDay: endDay,
-              rangeWorkingDaysOnly: workingDaysOnly
+              rangeWorkingDaysOnly: !allowAllDays
             });
           });
           td.addEventListener("mouseenter", () => {
