@@ -8,6 +8,8 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 
 - Planning mensuel par collaborateur (jours ouvrables)
 - Sélection du code d'absence avec journée, matinée, après-midi
+- Possibilité de saisir deux demi-journées différentes sur un même jour
+  (exemple : matin CP, après-midi RTT)
 - Saisie en plage de dates (mode plage)
 - Totaux mensuels par collaborateur et lignes "Présents" équipe/global
 - Récap annuel avec :
@@ -25,6 +27,14 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 
 En cas d'indisponibilité du stockage principal, l'application bascule
 automatiquement vers le secours puis vers le local si nécessaire.
+
+Mirroring et rattrapage automatique :
+- Quand Supabase est disponible, l'écriture est faite sur Supabase avec un
+	miroir best-effort vers JSONbin.
+- Si Supabase tombe pendant une écriture, l'état est écrit sur JSONbin et un
+	miroir "en attente" est conservé localement.
+- Au retour de Supabase, ce miroir en attente est automatiquement repoussé vers
+	Supabase, puis nettoyé.
 
 Configuration Supabase attendue :
 - table `shared_state`

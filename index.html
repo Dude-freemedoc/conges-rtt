@@ -1060,6 +1060,7 @@ const STORAGE_KEY = "gestion-conges-v1";
 const SHARED_CACHE_KEY = "gestion-conges-shared-cache-v1";
 const HIRE_DATE_MIGRATION_KEY = "gestion-conges-hiredate-migrated-v1";
 const BACKUP_HISTORY_KEY = "gestion-conges-backups-v1";
+const SUPABASE_MIRROR_PENDING_KEY = "gestion-conges-supabase-mirror-pending-v1";
 const BACKUP_HISTORY_LIMIT = 10;
 const SHARED_BACKUP_LIMIT = 5;
 
@@ -1647,6 +1648,46 @@ function saveBackupSnapshot(nextState, label) {
   }
 }
 
+function loadPendingSupabaseMirror() {
+  try {
+    const raw = localStorage.getItem(SUPABASE_MIRROR_PENDING_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.state || typeof parsed.state !== "object") {
+      return null;
+    }
+    return {
+      ts: typeof parsed.ts === "string" ? parsed.ts : "",
+      state: ensureStateShape(parsed.state)
+    };
+  } catch (e) {
+    console.warn("Miroir Supabase en attente invalide, réinitialisation", e);
+    return null;
+  }
+}
+
+function savePendingSupabaseMirror(nextState) {
+  try {
+    const payload = {
+      ts: new Date().toISOString(),
+      state: createBackupStateSnapshot(nextState)
+    };
+    localStorage.setItem(SUPABASE_MIRROR_PENDING_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.warn("Impossible de mémoriser le miroir Supabase en attente", e);
+  }
+}
+
+function clearPendingSupabaseMirror() {
+  try {
+    localStorage.removeItem(SUPABASE_MIRROR_PENDING_KEY);
+  } catch (e) {
+    console.warn("Impossible de nettoyer le miroir Supabase en attente", e);
+  }
+}
+
 function openEmployeeModal() {
   if (!appContext.canEdit) {
     return;
@@ -1889,6 +1930,34 @@ async function createSupabaseProvider() {
     await fallbackJsonbinProvider.saveSnapshot(snapshot);
   };
 
+  const upsertSupabaseState = async (snapshotState) => {
+    const response = await fetch(`${baseUrl}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
+      method: "POST",
+      headers: {
+        ...headers,
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      },
+      body: JSON.stringify({ id: SUPABASE_ROW_ID, state: snapshotState })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase PUT échoué (${response.status})`);
+    }
+  };
+
+  const mirrorToJsonbinBestEffort = async (snapshotState, label) => {
+    if (!fallbackJsonbinProvider) {
+      return;
+    }
+    try {
+      const mirrorState = cloneState(snapshotState);
+      appendSharedBackup(mirrorState, label || "miroir Supabase");
+      await fallbackJsonbinProvider.saveSnapshot(mirrorState);
+    } catch (error) {
+      console.warn("Miroir JSONbin impossible", error);
+    }
+  };
+
   return {
     mode: "supabase",
     canEdit: !!editorKey,
@@ -1908,10 +1977,28 @@ async function createSupabaseProvider() {
         if (!hasUsableSharedData(payload) && Array.isArray(payload.backups)) {
           const backups = normalizeBackupEntries(payload.backups);
           if (backups.length > 0) {
-            return ensureStateShape(backups[0].state);
+            const restored = ensureStateShape(backups[0].state);
+            return restored;
           }
         }
-        return ensureStateShape(payload);
+
+        const remoteState = ensureStateShape(payload);
+        const pendingMirror = loadPendingSupabaseMirror();
+        if (!pendingMirror?.state) {
+          return remoteState;
+        }
+
+        try {
+          const pendingState = cloneState(pendingMirror.state);
+          appendSharedBackup(pendingState, "rattrapage Supabase après coupure");
+          await upsertSupabaseState(pendingState);
+          await mirrorToJsonbinBestEffort(pendingState, "miroir rattrapage Supabase");
+          clearPendingSupabaseMirror();
+          return ensureStateShape(pendingState);
+        } catch (replayError) {
+          console.warn("Rattrapage Supabase impossible, miroir conservé", replayError);
+          return remoteState;
+        }
       } catch (error) {
         return readFallback(error);
       }
@@ -1926,21 +2013,13 @@ async function createSupabaseProvider() {
       try {
         const snapshotState = cloneState(nextState);
         appendSharedBackup(snapshotState, "sauvegarde Supabase");
-        const response = await fetch(`${baseUrl}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
-          method: "POST",
-          headers: {
-            ...headers,
-            Prefer: "resolution=merge-duplicates,return=minimal"
-          },
-          body: JSON.stringify({ id: SUPABASE_ROW_ID, state: snapshotState })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Supabase PUT échoué (${response.status})`);
-        }
+        await upsertSupabaseState(snapshotState);
+        clearPendingSupabaseMirror();
+        await mirrorToJsonbinBestEffort(snapshotState, "miroir Supabase");
       } catch (error) {
         const snapshotState = cloneState(nextState);
         appendSharedBackup(snapshotState, "sauvegarde secours JSONbin");
+        savePendingSupabaseMirror(snapshotState);
         await writeFallback(snapshotState, error);
       }
     }
