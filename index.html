@@ -464,6 +464,10 @@ td.code-slate select {
   font-weight: 600;
 }
 
+#planningTable thead tr:nth-child(2) th:nth-last-child(-n+9) {
+  background: #f3f8f5;
+}
+
 tr.team-separator td {
   background: #dce9f7;
   color: #24405f;
@@ -509,8 +513,16 @@ tr.team-member.team-n1 td.sticky-2 {
   background: #dff0ff;
 }
 
+tr.team-member.team-n1 td.totals {
+  background: #dff0ff;
+}
+
 tr.team-member.team-n2 td.sticky,
 tr.team-member.team-n2 td.sticky-2 {
+  background: #ffe8d2;
+}
+
+tr.team-member.team-n2 td.totals {
   background: #ffe8d2;
 }
 
@@ -518,13 +530,42 @@ tr.team-member.team-n1.row-odd td.sticky,
 tr.team-member.team-n1.row-odd td.sticky-2 {
   background: #cce6ff;
 }
+
+tr.team-member.team-n1.row-odd td.totals {
+  background: #cce6ff;
+}
+
 tr.team-member.team-n2.row-odd td.sticky,
 tr.team-member.team-n2.row-odd td.sticky-2 {
   background: #ffd8bb;
 }
 
+tr.team-member.team-n2.row-odd td.totals {
+  background: #ffd8bb;
+}
+
 #annualTable tr.team-member td {
   font-weight: 600;
+}
+
+#annualTable thead tr th:nth-last-child(-n+9) {
+  background: #f3f8f5;
+}
+
+#annualTable tr.team-member.team-n1 td:nth-last-child(-n+9) {
+  background: #dff0ff;
+}
+
+#annualTable tr.team-member.team-n2 td:nth-last-child(-n+9) {
+  background: #ffe8d2;
+}
+
+#annualTable tr.team-member.team-n1.row-odd td:nth-last-child(-n+9) {
+  background: #cce6ff;
+}
+
+#annualTable tr.team-member.team-n2.row-odd td:nth-last-child(-n+9) {
+  background: #ffd8bb;
 }
 
 #annualTable tr.annual-total-row td {
@@ -560,7 +601,7 @@ tr.presence-row td.holiday {
 }
 
 td.presence-cell.presence-end {
-  background: #f6f9fd;
+  background: #edf4ff;
 }
 
 #planningTable.compact th,
@@ -1138,10 +1179,10 @@ const codes = [
   { code: "CP", label: "Congé payé" },
   { code: "CPm", label: "CP matin (0.5)" },
   { code: "CPam", label: "CP après-midi (0.5)" },
-  { code: "CPp", label: "CP provisoire" },
   { code: "RTT", label: "RTT" },
   { code: "RTTm", label: "RTT matin (0.5)" },
   { code: "RTTam", label: "RTT après-midi (0.5)" },
+  { code: "CPp", label: "CP provisoire" },
   { code: "RTTp", label: "RTT provisoire" },
   { code: "FR", label: "Fractionnement" },
   { code: "CSS", label: "Congé sans solde" },
