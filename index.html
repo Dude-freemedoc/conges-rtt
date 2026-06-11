@@ -2622,10 +2622,26 @@ function openPicker(td, name, day, options = {}) {
   let left = rect.left + window.scrollX;
   let top = rect.bottom + window.scrollY + 2;
   picker.style.display = "block";
-  const pw = picker.offsetWidth || 220;
+  const pw = picker.offsetWidth || 280;
+  const ph = picker.offsetHeight || 200;
+  
+  // Gestion du débordement horizontal (à droite)
   if (left + pw > window.innerWidth - 8) {
     left = window.innerWidth - pw - 8;
   }
+  
+  // Gestion du débordement vertical (bas/haut)
+  const bottomSpace = window.innerHeight - rect.bottom;
+  const topSpace = rect.top;
+  
+  if (bottomSpace < ph + 8) {
+    // Pas assez d'espace en bas, placer au-dessus
+    if (topSpace > ph + 8) {
+      top = rect.top + window.scrollY - ph - 2;
+    }
+    // Si pas assez d'espace en haut non plus, garder en bas mais scrollable
+  }
+  
   picker.style.left = left + "px";
   picker.style.top = top + "px";
 }
