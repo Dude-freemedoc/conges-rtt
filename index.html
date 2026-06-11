@@ -121,7 +121,7 @@ h2 {
 }
 
 h1 {
-  font-size: 1.5em;
+  font-size: 1.28em;
 }
 
 .card-header-with-controls {
@@ -158,6 +158,24 @@ h1 {
 .subtitle {
   margin: 0;
   color: var(--ink-muted);
+}
+
+.header-identity {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.header-identity h1,
+.header-identity .subtitle {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.header-identity .subtitle {
+  font-size: 0.95rem;
 }
 
 .selection-group {
@@ -216,7 +234,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .toolbar #manageEmployeesBtn {
@@ -227,7 +245,7 @@ h1 {
 
 .header-actions {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
 }
 
@@ -243,7 +261,7 @@ h1 {
 .header-top {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: center;
   gap: 14px;
 }
 
@@ -460,12 +478,13 @@ td.code-slate select {
 }
 
 .totals {
-  background: #f8fbf9;
+  background: #f8fafc;
   font-weight: 600;
 }
 
-#planningTable thead tr:nth-child(2) th:nth-last-child(-n+9) {
-  background: #f3f8f5;
+#planningTable thead th.totals-header {
+  background: #f2f4f7;
+  color: #344054;
 }
 
 tr.team-separator td {
@@ -548,8 +567,14 @@ tr.team-member.team-n2.row-odd td.totals {
   font-weight: 600;
 }
 
+#annualTable thead th {
+  background: #f2f4f7;
+  color: #344054;
+}
+
 #annualTable thead tr th:nth-last-child(-n+9) {
-  background: #f3f8f5;
+  background: #f2f4f7;
+  color: #344054;
 }
 
 #annualTable tr.team-member.team-n1 td:nth-last-child(-n+9) {
@@ -569,9 +594,9 @@ tr.team-member.team-n2.row-odd td.totals {
 }
 
 #annualTable tr.annual-total-row td {
-  background: #eef5fb;
+  background: #f2f4f7;
   font-weight: 700;
-  color: #1f4877;
+  color: #344054;
 }
 
 #planningTable tr.team-member td.sticky,
@@ -580,28 +605,28 @@ tr.team-member.team-n2.row-odd td.totals {
 }
 
 tr.presence-row td {
-  background: #edf4ff;
+  background: #f2f4f7;
   font-weight: 700;
-  color: #1f4877;
+  color: #344054;
 }
 
 tr.presence-row td.saturday {
-  background: #d4e8ff;
-  color: #244f7d;
+  background: #dcebff;
+  color: #344054;
 }
 
 tr.presence-row td.sunday {
-  background: #ffd8d8;
-  color: #7a2f2f;
+  background: #ffe2e2;
+  color: #344054;
 }
 
 tr.presence-row td.holiday {
-  background: #ffe3b5;
-  color: #6e4a08;
+  background: #ffe9bf;
+  color: #344054;
 }
 
 td.presence-cell.presence-end {
-  background: #edf4ff;
+  background: #f2f4f7;
 }
 
 #planningTable.compact th,
@@ -610,6 +635,40 @@ td.presence-cell.presence-end {
   font-size: 0.7rem;
 }
 
+#planningTable.compact th.week-number {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #344054;
+  background: #f2f4f7;
+}
+
+#planningTable th.week-blank {
+  background: #f2f4f7;
+}
+
+#planningTable th.week-corner {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+#planningTable th.week-number.saturday {
+  background: #d9ecff;
+}
+
+#planningTable th.week-number.sunday {
+  background: #ffe1e1;
+}
+
+#planningTable th.week-number.holiday {
+  background: #ffe8bf;
+}
+
+#planningTable thead th.name,
+#planningTable thead th.sticky-2 {
+  background: #f2f4f7;
+  color: #344054;
+}
 #planningTable.compact th.name,
 #planningTable.compact td.name {
   width: 145px;
@@ -853,14 +912,13 @@ td.day-cell.range-preview {
 .employee-form h3 {
   margin: 0 0 12px 0;
   font-size: 1rem;
+  color: var(--ink);
 }
 
-.employee-form input,
 .employee-form select {
   border-radius: 10px;
   border: 1px solid var(--line);
   padding: 10px;
-  font-family: inherit;
   background: white;
   color: var(--ink);
 }
@@ -968,6 +1026,17 @@ hr {
     align-items: flex-start;
   }
 
+  .header-identity {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .header-identity h1,
+  .header-identity .subtitle {
+    white-space: normal;
+  }
+
   .header-actions {
     width: 100%;
     align-items: flex-start;
@@ -977,6 +1046,7 @@ hr {
     width: 100%;
     justify-content: space-between;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .selection-group {
@@ -1014,7 +1084,7 @@ hr {
     <main class="app-shell">
       <header class="app-header">
         <div class="header-top">
-          <div>
+          <div class="header-identity">
             <h1>SUPPORT HELLODOC - Gestion des absences</h1>
             <p class="subtitle">Période de Juin 2026 à Mai 2027</p>
           </div>
@@ -2605,14 +2675,34 @@ function renderPlanning() {
   planningTable.classList.add("compact");
 
   const thead = document.createElement("thead");
+  const row0 = document.createElement("tr");
+  row0.innerHTML = '<th class="sticky week-blank week-corner" colspan="2" rowspan="2"></th>';
+  {
+    let day = 1;
+    while (day <= days) {
+      const date = new Date(year, monthIndex, day);
+      const dayType = getDayType(date);
+      const weekNumber = getIsoWeekNumber(date);
+      let span = 1;
+      while (day + span <= days) {
+        const nextDate = new Date(year, monthIndex, day + span);
+        if (getIsoWeekNumber(nextDate) !== weekNumber) {
+          break;
+        }
+        span += 1;
+      }
+      row0.innerHTML += `<th class="week-number ${dayType.headerClass}" colspan="${span}" title="Semaine ${weekNumber}">S${String(weekNumber).padStart(2, "0")}</th>`;
+      day += span;
+    }
+  }
+  row0.innerHTML += '<th class="week-blank totals-header" colspan="9" rowspan="2"></th>';
+
   const row1 = document.createElement("tr");
-  row1.innerHTML = '<th class="sticky name"></th><th class="sticky-2"></th>';
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
     row1.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
   }
-  row1.innerHTML += '<th colspan="9"></th>';
 
   const row2 = document.createElement("tr");
   row2.innerHTML = [
@@ -2624,13 +2714,15 @@ function renderPlanning() {
     const dayType = getDayType(date);
     row2.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${day}</th>`;
   }
-  row2.innerHTML += ["<th>CP</th>", "<th>RTT</th>", "<th>FR</th>", "<th>CSS</th>", "<th>FAM</th>", "<th>PM</th>", "<th>MAL</th>", "<th>RC</th>", "<th>DIV</th>"].join("");
+  row2.innerHTML += ["<th class='totals-header'>CP</th>", "<th class='totals-header'>RTT</th>", "<th class='totals-header'>FR</th>", "<th class='totals-header'>CSS</th>", "<th class='totals-header'>FAM</th>", "<th class='totals-header'>PM</th>", "<th class='totals-header'>MAL</th>", "<th class='totals-header'>RC</th>", "<th class='totals-header'>DIV</th>"].join("");
 
+  thead.appendChild(row0);
   thead.appendChild(row1);
   thead.appendChild(row2);
   planningTable.appendChild(thead);
 
   const tbody = document.createElement("tbody");
+  const presenceRows = [];
 
   for (const team of teams) {
     const teamMembers = employees.filter((e) => e.team === team);
@@ -2761,10 +2853,23 @@ function renderPlanning() {
       tbody.appendChild(tr);
     }
 
-    tbody.appendChild(createPresenceRow(teamMembers, selectedMonth, year, monthIndex, days, `Présents ${team}`));
+    const teamPresenceRow = createPresenceRow(teamMembers, selectedMonth, year, monthIndex, days, `Présents ${team}`);
+    tbody.appendChild(teamPresenceRow);
+    presenceRows.push(teamPresenceRow);
   }
 
-  tbody.appendChild(createPresenceRow(employees, selectedMonth, year, monthIndex, days, "Présents Global"));
+  const globalPresenceRow = createPresenceRow(employees, selectedMonth, year, monthIndex, days, "Présents Global");
+  tbody.appendChild(globalPresenceRow);
+  presenceRows.push(globalPresenceRow);
+
+  if (presenceRows.length >= 2) {
+    const penultimatePresence = presenceRows[presenceRows.length - 2].querySelector("td.presence-end");
+    const lastPresence = presenceRows[presenceRows.length - 1].querySelector("td.presence-end");
+    if (penultimatePresence && lastPresence) {
+      penultimatePresence.rowSpan = 2;
+      lastPresence.remove();
+    }
+  }
 
   planningTable.appendChild(tbody);
 }
@@ -2790,7 +2895,7 @@ function appendTotalsCells(row) {
 function createPresenceRow(members, monthKey, year, monthIndex, days, label) {
   const tr = document.createElement("tr");
   tr.className = "presence-row";
-  tr.innerHTML = `<td class="sticky name">${label}</td><td class="sticky-2"></td>`;
+  tr.innerHTML = `<td class="sticky name" colspan="2">${label}</td>`;
 
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
@@ -2817,12 +2922,11 @@ function createPresenceRow(members, monthKey, year, monthIndex, days, label) {
     tr.appendChild(td);
   }
 
-  for (let i = 0; i < 9; i += 1) {
-    const td = document.createElement("td");
-    td.className = "presence-cell presence-end";
-    td.textContent = "";
-    tr.appendChild(td);
-  }
+  const totalsBlank = document.createElement("td");
+  totalsBlank.className = "presence-cell presence-end";
+  totalsBlank.colSpan = 9;
+  totalsBlank.textContent = "";
+  tr.appendChild(totalsBlank);
 
   return tr;
 }
@@ -3081,6 +3185,14 @@ function getDayType(date) {
 
 function getDaysInMonth(year, monthIndex) {
   return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function getIsoWeekNumber(date) {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+  return Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
 }
 
 function normalizeHireDate(value) {

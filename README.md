@@ -7,11 +7,14 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 ## Fonctionnalités
 
 - Planning mensuel par collaborateur (jours ouvrables)
+- Affichage des numéros de semaine ISO dans l'en-tête mensuel
 - Sélection du code d'absence avec journée, matinée, après-midi
 - Possibilité de saisir deux demi-journées différentes sur un même jour
   (exemple : matin CP, après-midi RTT)
 - Saisie en plage de dates (mode plage)
 - Totaux mensuels par collaborateur et lignes "Présents" équipe/global
+- Fusion visuelle des zones vides d'en-tête et des fins de lignes "Présents"
+  pour une lecture plus compacte
 - Récap annuel avec :
 	- date d'embauche
 	- ancienneté (ans)
