@@ -420,7 +420,23 @@ th.sunday {
 
 td.holiday,
 th.holiday {
-  background: #ffe8bf;
+  background: #dfe4ea;
+}
+
+#planningTable th.today-col,
+#planningTable td.today-col {
+  position: relative;
+}
+
+#planningTable thead th.today-col {
+  background: #fff3cd !important;
+  color: #5b4a15;
+  box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
+}
+
+#planningTable td.today-col {
+  background-image: linear-gradient(to bottom, rgba(255, 243, 205, 0.22), rgba(255, 243, 205, 0.22));
+  box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
 }
 
 td.saturday select,
@@ -524,7 +540,7 @@ tr.team-member.team-n1 td.holiday,
 tr.team-member.team-n1.row-odd td.holiday,
 tr.team-member.team-n2 td.holiday,
 tr.team-member.team-n2.row-odd td.holiday {
-  background: #ffe8bf;
+  background: #dfe4ea;
 }
 
 tr.team-member.team-n1 td.sticky,
@@ -621,7 +637,7 @@ tr.presence-row td.sunday {
 }
 
 tr.presence-row td.holiday {
-  background: #ffe9bf;
+  background: #dfe4ea;
   color: #344054;
 }
 
@@ -661,7 +677,13 @@ td.presence-cell.presence-end {
 }
 
 #planningTable th.week-number.holiday {
-  background: #ffe8bf;
+  background: #dfe4ea;
+}
+
+#planningTable th.week-number.current-week {
+  background: #fff3cd !important;
+  color: #5b4a15;
+  box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
 }
 
 #planningTable thead th.name,
@@ -1357,7 +1379,11 @@ const employeeListContainer = document.getElementById("employeeListContainer");
 
 let editingEmployeeIndex = -1;
 let state = createEmptyState();
-let selectedMonth = monthDefs[0].key;
+const today = new Date();
+const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+let selectedMonth = monthDefs.some((month) => month.key === currentMonthKey)
+  ? currentMonthKey
+  : monthDefs[0].key;
 let editorKey = null;
 let rangeMode = false;
 let rangeSelection = {
@@ -2686,6 +2712,9 @@ function renderPlanning() {
   const year = Number(yearText);
   const monthIndex = Number(monthText) - 1;
   const days = getDaysInMonth(year, monthIndex);
+  const now = new Date();
+  const todayDay =
+    now.getFullYear() === year && now.getMonth() === monthIndex ? now.getDate() : null;
 
   planningTable.innerHTML = "";
   planningTable.classList.add("compact");
@@ -2707,7 +2736,9 @@ function renderPlanning() {
         }
         span += 1;
       }
-      row0.innerHTML += `<th class="week-number ${dayType.headerClass}" colspan="${span}" title="Semaine ${weekNumber}">S${String(weekNumber).padStart(2, "0")}</th>`;
+      const isCurrentWeek = Number.isInteger(todayDay) && todayDay >= day && todayDay < day + span;
+      const weekClass = ["week-number", dayType.headerClass, isCurrentWeek ? "current-week" : ""].filter(Boolean).join(" ");
+      row0.innerHTML += `<th class="${weekClass}" colspan="${span}" title="Semaine ${weekNumber}">S${String(weekNumber).padStart(2, "0")}</th>`;
       day += span;
     }
   }
@@ -2717,7 +2748,8 @@ function renderPlanning() {
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
-    row1.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
+    const weekdayClass = [dayType.headerClass, day === todayDay ? "today-col" : ""].filter(Boolean).join(" ");
+    row1.innerHTML += `<th class="${weekdayClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
   }
 
   const row2 = document.createElement("tr");
@@ -2728,7 +2760,8 @@ function renderPlanning() {
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
-    row2.innerHTML += `<th class="${dayType.headerClass}" title="${dayType.title}">${day}</th>`;
+    const dayNumberClass = [dayType.headerClass, day === todayDay ? "today-col" : ""].filter(Boolean).join(" ");
+    row2.innerHTML += `<th class="${dayNumberClass}" title="${dayType.title}">${day}</th>`;
   }
   row2.innerHTML += ["<th class='totals-header'>CP</th>", "<th class='totals-header'>RTT</th>", "<th class='totals-header'>FR</th>", "<th class='totals-header'>CSS</th>", "<th class='totals-header'>FAM</th>", "<th class='totals-header'>PM</th>", "<th class='totals-header'>MAL</th>", "<th class='totals-header'>RC</th>", "<th class='totals-header'>DIV</th>"].join("");
 
@@ -2759,6 +2792,7 @@ function renderPlanning() {
         const dayType = getDayType(date);
         const td = document.createElement("td");
         td.className = "day-cell";
+        if (day === todayDay) td.classList.add("today-col");
         if (dayType.isSaturday) td.classList.add("saturday");
         if (dayType.isSunday) td.classList.add("sunday");
         if (dayType.isHoliday) {
@@ -2869,12 +2903,12 @@ function renderPlanning() {
       tbody.appendChild(tr);
     }
 
-    const teamPresenceRow = createPresenceRow(teamMembers, selectedMonth, year, monthIndex, days, `Présents ${team}`);
+    const teamPresenceRow = createPresenceRow(teamMembers, selectedMonth, year, monthIndex, days, `Présents ${team}`, todayDay);
     tbody.appendChild(teamPresenceRow);
     presenceRows.push(teamPresenceRow);
   }
 
-  const globalPresenceRow = createPresenceRow(employees, selectedMonth, year, monthIndex, days, "Présents Global");
+  const globalPresenceRow = createPresenceRow(employees, selectedMonth, year, monthIndex, days, "Présents Global", todayDay);
   tbody.appendChild(globalPresenceRow);
   presenceRows.push(globalPresenceRow);
 
@@ -2908,7 +2942,7 @@ function appendTotalsCells(row) {
   }
 }
 
-function createPresenceRow(members, monthKey, year, monthIndex, days, label) {
+function createPresenceRow(members, monthKey, year, monthIndex, days, label, todayDay = null) {
   const tr = document.createElement("tr");
   tr.className = "presence-row";
   tr.innerHTML = `<td class="sticky name" colspan="2">${label}</td>`;
@@ -2918,6 +2952,7 @@ function createPresenceRow(members, monthKey, year, monthIndex, days, label) {
     const dayType = getDayType(date);
     const td = document.createElement("td");
     td.className = "presence-cell";
+    if (day === todayDay) td.classList.add("today-col");
     if (dayType.isSaturday) td.classList.add("saturday");
     if (dayType.isSunday) td.classList.add("sunday");
     if (dayType.isHoliday) {
