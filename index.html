@@ -668,18 +668,6 @@ td.presence-cell.presence-end {
   z-index: 3;
 }
 
-#planningTable th.week-number.saturday {
-  background: #d9ecff;
-}
-
-#planningTable th.week-number.sunday {
-  background: #ffe1e1;
-}
-
-#planningTable th.week-number.holiday {
-  background: #dfe4ea;
-}
-
 #planningTable th.week-number.current-week {
   background: #fff3cd !important;
   color: #5b4a15;
@@ -2737,7 +2725,7 @@ function renderPlanning() {
         span += 1;
       }
       const isCurrentWeek = Number.isInteger(todayDay) && todayDay >= day && todayDay < day + span;
-      const weekClass = ["week-number", dayType.headerClass, isCurrentWeek ? "current-week" : ""].filter(Boolean).join(" ");
+      const weekClass = ["week-number", isCurrentWeek ? "current-week" : ""].filter(Boolean).join(" ");
       row0.innerHTML += `<th class="${weekClass}" colspan="${span}" title="Semaine ${weekNumber}">S${String(weekNumber).padStart(2, "0")}</th>`;
       day += span;
     }
