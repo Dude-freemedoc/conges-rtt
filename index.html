@@ -158,6 +158,32 @@ h1 {
   color: var(--ink);
 }
 
+.month-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.month-nav-btn:hover {
+  background: #e8f0fb;
+}
+
+.month-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .subtitle {
   margin: 0;
   color: var(--ink-muted);
@@ -290,7 +316,8 @@ button {
   font-weight: 600;
 }
 
-button:hover {
+button:hover:not(:disabled) {
+  background: #e8f0fb;
   transform: translateY(-1px);
 }
 
@@ -308,6 +335,14 @@ button.danger {
 button.active-toggle {
   border-color: #7aa987;
   background: #eaf6ed;
+}
+
+button.active-toggle:hover:not(:disabled) {
+  background: #d8eedd;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #fce8e8;
 }
 
 .legend {
@@ -353,9 +388,11 @@ button.active-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 30px;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
   height: 20px;
-  padding: 0 4px;
+  padding: 0;
   border-radius: 5px;
   font-weight: 700;
   color: #fff;
@@ -516,9 +553,22 @@ td.code-slate select {
   font-weight: 600;
 }
 
+#planningTable td[data-total="CP"],
+#planningTable th.totals-sep,
+#planningTable td.presence-end,
+#planningTable .day-first {
+  border-left: 2px solid #bfd0dd;
+}
+
 #planningTable thead th.totals-header {
   background: #f2f4f7;
   color: #344054;
+}
+
+#planningTable thead tr:nth-child(2) th,
+#planningTable thead tr:nth-child(3) th {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 tr.team-separator td {
@@ -533,6 +583,11 @@ tr.team-member.team-n1 td {
 
 tr.team-member.team-n2 td {
   background: #fff7ef;
+}
+
+tr.team-member:hover td {
+  filter: brightness(0.96);
+  transition: filter 80ms;
 }
 
 tr.team-member.team-n1.row-odd td {
@@ -563,38 +618,38 @@ tr.team-member.team-n2.row-odd td.holiday {
 
 tr.team-member.team-n1 td.sticky,
 tr.team-member.team-n1 td.sticky-2 {
-  background: #dff0ff;
+  background: #edf6ff;
 }
 
 tr.team-member.team-n1 td.totals {
-  background: #dff0ff;
+  background: #edf6ff;
 }
 
 tr.team-member.team-n2 td.sticky,
 tr.team-member.team-n2 td.sticky-2 {
-  background: #ffe8d2;
+  background: #fff1e3;
 }
 
 tr.team-member.team-n2 td.totals {
-  background: #ffe8d2;
+  background: #fff1e3;
 }
 
 tr.team-member.team-n1.row-odd td.sticky,
 tr.team-member.team-n1.row-odd td.sticky-2 {
-  background: #cce6ff;
+  background: #deefff;
 }
 
 tr.team-member.team-n1.row-odd td.totals {
-  background: #cce6ff;
+  background: #deefff;
 }
 
 tr.team-member.team-n2.row-odd td.sticky,
 tr.team-member.team-n2.row-odd td.sticky-2 {
-  background: #ffd8bb;
+  background: #ffe7d2;
 }
 
 tr.team-member.team-n2.row-odd td.totals {
-  background: #ffd8bb;
+  background: #ffe7d2;
 }
 
 #annualTable tr.team-member td {
@@ -611,20 +666,27 @@ tr.team-member.team-n2.row-odd td.totals {
   color: #344054;
 }
 
+#annualTable th:nth-child(3),
+#annualTable td:nth-child(3),
+#annualTable th:nth-child(14),
+#annualTable td:nth-child(14) {
+  border-left: 2px solid #bfd0dd;
+}
+
 #annualTable tr.team-member.team-n1 td:nth-last-child(-n+9) {
-  background: #dff0ff;
+  background: #edf6ff;
 }
 
 #annualTable tr.team-member.team-n2 td:nth-last-child(-n+9) {
-  background: #ffe8d2;
+  background: #fff1e3;
 }
 
 #annualTable tr.team-member.team-n1.row-odd td:nth-last-child(-n+9) {
-  background: #cce6ff;
+  background: #deefff;
 }
 
 #annualTable tr.team-member.team-n2.row-odd td:nth-last-child(-n+9) {
-  background: #ffd8bb;
+  background: #ffe7d2;
 }
 
 #annualTable tr.annual-total-row td {
@@ -1036,6 +1098,10 @@ td.day-cell.range-preview {
   border-color: #e5a2a2;
 }
 
+.employee-actions button.delete:hover:not(:disabled) {
+  background: #fce8e8;
+}
+
 hr {
   border: none;
   border-top: 1px solid #dde8e2;
@@ -1135,10 +1201,12 @@ hr {
       <section class="card">
         <div class="card-header-with-controls">
           <h2>Planning mensuel</h2>
-          <label class="month-selector">
-            Mois :
+          <div class="month-selector">
+            <span>Mois :</span>
+            <button id="prevMonthBtn" class="month-nav-btn" type="button" title="Mois précédent">&#8249;</button>
             <select id="monthSelect"></select>
-          </label>
+            <button id="nextMonthBtn" class="month-nav-btn" type="button" title="Mois suivant">&#8250;</button>
+          </div>
         </div>
         <section class="legend" id="legend"></section>
         <div class="table-wrap">
@@ -1480,7 +1548,32 @@ async function init() {
     clearRangeSelection();
     closePicker();
     renderPlanning();
+    updateMonthNavBtns();
   });
+
+  document.getElementById("prevMonthBtn").addEventListener("click", () => {
+    const idx = monthDefs.findIndex((m) => m.key === selectedMonth);
+    if (idx <= 0) return;
+    selectedMonth = monthDefs[idx - 1].key;
+    monthSelect.value = selectedMonth;
+    clearRangeSelection();
+    closePicker();
+    renderPlanning();
+    updateMonthNavBtns();
+  });
+
+  document.getElementById("nextMonthBtn").addEventListener("click", () => {
+    const idx = monthDefs.findIndex((m) => m.key === selectedMonth);
+    if (idx < 0 || idx >= monthDefs.length - 1) return;
+    selectedMonth = monthDefs[idx + 1].key;
+    monthSelect.value = selectedMonth;
+    clearRangeSelection();
+    closePicker();
+    renderPlanning();
+    updateMonthNavBtns();
+  });
+
+  updateMonthNavBtns();
 
   document.addEventListener("click", closePicker);
 
@@ -2743,18 +2836,19 @@ function renderPlanning() {
         span += 1;
       }
       const isCurrentWeek = Number.isInteger(todayDay) && todayDay >= day && todayDay < day + span;
-      const weekClass = ["week-number", isCurrentWeek ? "current-week" : ""].filter(Boolean).join(" ");
+      const isFirstWeek = day === 1;
+      const weekClass = ["week-number", isCurrentWeek ? "current-week" : "", isFirstWeek ? "day-first" : ""].filter(Boolean).join(" ");
       row0.innerHTML += `<th class="${weekClass}" colspan="${span}" title="Semaine ${weekNumber}">S${String(weekNumber).padStart(2, "0")}</th>`;
       day += span;
     }
   }
-  row0.innerHTML += '<th class="week-blank totals-header" colspan="9" rowspan="2"></th>';
+  row0.innerHTML += '<th class="week-blank totals-header totals-sep" colspan="9" rowspan="2"></th>';
 
   const row1 = document.createElement("tr");
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
-    const weekdayClass = [dayType.headerClass, day === todayDay ? "today-col" : ""].filter(Boolean).join(" ");
+    const weekdayClass = [dayType.headerClass, day === todayDay ? "today-col" : "", day === 1 ? "day-first" : ""].filter(Boolean).join(" ");
     row1.innerHTML += `<th class="${weekdayClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
   }
 
@@ -2766,10 +2860,10 @@ function renderPlanning() {
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
-    const dayNumberClass = [dayType.headerClass, day === todayDay ? "today-col" : ""].filter(Boolean).join(" ");
+    const dayNumberClass = [dayType.headerClass, day === todayDay ? "today-col" : "", day === 1 ? "day-first" : ""].filter(Boolean).join(" ");
     row2.innerHTML += `<th class="${dayNumberClass}" title="${dayType.title}">${day}</th>`;
   }
-  row2.innerHTML += ["<th class='totals-header'>CP</th>", "<th class='totals-header'>RTT</th>", "<th class='totals-header'>FR</th>", "<th class='totals-header'>CSS</th>", "<th class='totals-header'>FAM</th>", "<th class='totals-header'>PM</th>", "<th class='totals-header'>MAL</th>", "<th class='totals-header'>RC</th>", "<th class='totals-header'>DIV</th>"].join("");
+  row2.innerHTML += ["<th class='totals-header totals-sep'>CP</th>", "<th class='totals-header'>RTT</th>", "<th class='totals-header'>FR</th>", "<th class='totals-header'>CSS</th>", "<th class='totals-header'>FAM</th>", "<th class='totals-header'>PM</th>", "<th class='totals-header'>MAL</th>", "<th class='totals-header'>RC</th>", "<th class='totals-header'>DIV</th>"].join("");
 
   thead.appendChild(row0);
   thead.appendChild(row1);
@@ -2798,6 +2892,7 @@ function renderPlanning() {
         const dayType = getDayType(date);
         const td = document.createElement("td");
         td.className = "day-cell";
+        if (day === 1) td.classList.add("day-first");
         if (day === todayDay) td.classList.add("today-col");
         if (dayType.isSaturday) td.classList.add("saturday");
         if (dayType.isSunday) td.classList.add("sunday");
@@ -2958,6 +3053,7 @@ function createPresenceRow(members, monthKey, year, monthIndex, days, label, tod
     const dayType = getDayType(date);
     const td = document.createElement("td");
     td.className = "presence-cell";
+    if (day === 1) td.classList.add("day-first");
     if (day === todayDay) td.classList.add("today-col");
     if (dayType.isSaturday) td.classList.add("saturday");
     if (dayType.isSunday) td.classList.add("sunday");
@@ -3433,6 +3529,12 @@ function renderMonthSelect() {
     monthSelect.appendChild(option);
   }
   monthSelect.value = selectedMonth;
+}
+
+function updateMonthNavBtns() {
+  const idx = monthDefs.findIndex((m) => m.key === selectedMonth);
+  document.getElementById("prevMonthBtn").disabled = idx <= 0;
+  document.getElementById("nextMonthBtn").disabled = idx >= monthDefs.length - 1;
 }
     </script>
   </body>

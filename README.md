@@ -15,6 +15,7 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 - Sélection du code d'absence avec journée, matinée, après-midi
 - Possibilité de saisir deux demi-journées différentes sur un même jour
   (exemple : matin CP, après-midi RTT)
+- Navigation rapide entre les mois via les flèches ‹ / › encadrant le sélecteur
 - Saisie en plage de dates (mode plage)
 - Picker d'absence positionné automatiquement pour rester visible dans la page
 - Totaux mensuels par collaborateur et lignes "Présents" équipe/global
@@ -25,6 +26,7 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 	- ancienneté (ans)
 	- CP ancienneté (barème Syntec)
 	- soldes initiaux et soldes restants
+	- séparateurs verticaux pour délimiter les blocs (identitaire / données / totaux)
 - Gestion des collaborateurs (nom, équipe, date d'embauche)
 
 ## Stockage et résilience
