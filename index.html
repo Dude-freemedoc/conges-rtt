@@ -184,6 +184,13 @@ h1 {
   cursor: default;
 }
 
+.month-current-btn {
+  width: 30px;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .subtitle {
   margin: 0;
   color: var(--ink-muted);
@@ -1185,12 +1192,12 @@ hr {
           <section id="appStatus" class="app-status"></section>
           <div class="header-actions">
             <div class="toolbar">
-              <button id="manageEmployeesBtn" type="button" disabled>Gérer collaborateurs</button>
+              <button id="manageEmployeesBtn" type="button" disabled title="Gérer les techniciens : ajouter, modifier ou supprimer un technicien">Gérer techniciens</button>
               <div class="selection-group">
                 <span class="selection-group-label">Type de sélection :</span>
                 <div class="selection-buttons">
-                  <button id="rangeModeBtn" type="button" disabled>Saisie simple</button>
-                  <button id="workingDaysOnlyBtn" type="button" disabled>Jours ouvrés</button>
+                  <button id="rangeModeBtn" type="button" disabled title="Saisie simple : sélectionner une seule case">Saisie simple</button>
+                  <button id="workingDaysOnlyBtn" type="button" disabled title="Jours ouvrés : exclure weekends et fériés">Jours ouvrés</button>
                 </div>
               </div>
             </div>
@@ -1206,6 +1213,7 @@ hr {
             <button id="prevMonthBtn" class="month-nav-btn" type="button" title="Mois précédent">&#8249;</button>
             <select id="monthSelect"></select>
             <button id="nextMonthBtn" class="month-nav-btn" type="button" title="Mois suivant">&#8250;</button>
+            <button id="currentMonthBtn" class="month-nav-btn month-current-btn" type="button" title="Revenir au mois en cours" aria-label="Revenir au mois en cours">&#128467;&#65039;</button>
           </div>
         </div>
         <section class="legend" id="legend"></section>
@@ -1224,11 +1232,11 @@ hr {
 
     <div id="codePicker" class="code-picker" style="display:none"></div>
 
-    <!-- Modal gestion collaborateurs -->
+    <!-- Modal gestion techniciens -->
     <div id="employeeModal" class="modal" style="display:none">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Gérer les collaborateurs</h2>
+          <h2>Gérer les techniciens</h2>
           <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
         </div>
         <div class="modal-body">
@@ -1255,7 +1263,7 @@ hr {
           </div>
           <hr />
           <div class="employee-list">
-            <h3>Collaborateurs</h3>
+            <h3>Techniciens</h3>
             <div id="employeeListContainer"></div>
           </div>
         </div>
@@ -1573,6 +1581,17 @@ async function init() {
     updateMonthNavBtns();
   });
 
+  document.getElementById("currentMonthBtn").addEventListener("click", () => {
+    const hasCurrentInRange = monthDefs.some((m) => m.key === currentMonthKey);
+    if (!hasCurrentInRange || selectedMonth === currentMonthKey) return;
+    selectedMonth = currentMonthKey;
+    monthSelect.value = selectedMonth;
+    clearRangeSelection();
+    closePicker();
+    renderPlanning();
+    updateMonthNavBtns();
+  });
+
   updateMonthNavBtns();
 
   document.addEventListener("click", closePicker);
@@ -1615,8 +1634,14 @@ async function init() {
 function updateRangeModeUi() {
   rangeModeBtn.textContent = rangeMode ? "Saisie plage" : "Saisie simple";
   rangeModeBtn.classList.toggle("active-toggle", rangeMode);
+  rangeModeBtn.title = rangeMode
+    ? "Saisie plage : sélectionner une période"
+    : "Saisie simple : sélectionner une seule case";
   workingDaysOnlyBtn.textContent = allowAllDays ? "Tous les jours" : "Jours ouvrés";
   workingDaysOnlyBtn.classList.toggle("active-toggle", allowAllDays);
+  workingDaysOnlyBtn.title = allowAllDays
+    ? "Tous les jours : inclure weekends et fériés"
+    : "Jours ouvrés : exclure weekends et fériés";
   workingDaysOnlyBtn.disabled = !appContext.canEdit;
   if (!appContext.canEdit) {
     rangeMode = false;
@@ -1756,7 +1781,7 @@ function saveEmployeesToStorage() {
   try {
     localStorage.setItem("gestion-conges-employees", JSON.stringify(employees));
   } catch (e) {
-    console.error("Impossible de sauvegarder les collaborateurs", e);
+    console.error("Impossible de sauvegarder les techniciens", e);
   }
 }
 
@@ -1783,7 +1808,7 @@ function loadEmployeesFromStorage() {
       employees.push(...cleaned);
     }
   } catch (e) {
-    console.error("Impossible de charger les collaborateurs", e);
+    console.error("Impossible de charger les techniciens", e);
   }
 }
 
@@ -2027,7 +2052,7 @@ function addOrUpdateEmployee() {
   } else {
     const exists = employees.some((e) => e.name === name);
     if (exists) {
-      alert("Ce collaborateur existe déjà");
+      alert("Ce technicien existe déjà");
       return;
     }
     employees.push({ name, team, hireDate });
@@ -2409,7 +2434,7 @@ function mergeStates(remote, base, local) {
       .map((e) => [e.name, normalizeHireDate(e.hireDate)])
   );
 
-  // Liste des collaborateurs : si elle a changé localement (ajout / suppression /
+  // Liste des techniciens : si elle a changé localement (ajout / suppression /
   // renommage / changement d'équipe), on adopte la version locale.
   const localEmps = JSON.stringify(local.employees || []);
   const baseEmps = JSON.stringify(base.employees || []);
@@ -2854,7 +2879,7 @@ function renderPlanning() {
 
   const row2 = document.createElement("tr");
   row2.innerHTML = [
-    '<th class="sticky name">Collaborateur</th>',
+    '<th class="sticky name">Technicien</th>',
     '<th class="sticky-2">Équipe</th>'
   ].join("");
   for (let day = 1; day <= days; day += 1) {
@@ -3206,7 +3231,7 @@ function renderAnnual() {
   const thead = document.createElement("thead");
   const hr = document.createElement("tr");
   hr.innerHTML = [
-    '<th class="sticky name">Collaborateur</th>',
+    '<th class="sticky name">Technicien</th>',
     '<th class="sticky-2">Équipe</th>',
     "<th>Date d'embauche</th>",
     "<th>Ancienneté (ans)</th>",
@@ -3425,7 +3450,7 @@ function createEmptyState() {
 }
 
 function ensureStateShape(input) {
-  // Si l'état distant contient une liste de collaborateurs, on l'adopte
+  // Si l'état distant contient une liste de techniciens, on l'adopte
   // comme source de vérité avant de construire la structure data/balances.
   if (input && typeof input === "object" && Array.isArray(input.employees) && input.employees.length > 0) {
     const currentHireDateByName = new Map(
@@ -3533,8 +3558,10 @@ function renderMonthSelect() {
 
 function updateMonthNavBtns() {
   const idx = monthDefs.findIndex((m) => m.key === selectedMonth);
+  const hasCurrentInRange = monthDefs.some((m) => m.key === currentMonthKey);
   document.getElementById("prevMonthBtn").disabled = idx <= 0;
   document.getElementById("nextMonthBtn").disabled = idx >= monthDefs.length - 1;
+  document.getElementById("currentMonthBtn").disabled = !hasCurrentInRange || selectedMonth === currentMonthKey;
 }
     </script>
   </body>

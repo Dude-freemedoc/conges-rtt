@@ -6,7 +6,7 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 
 ## Fonctionnalités
 
-- Planning mensuel par collaborateur (jours ouvrables)
+- Planning mensuel par technicien (jours ouvrables)
 - Ouverture par défaut sur le mois courant (si présent dans la période)
 - Affichage des numéros de semaine ISO dans l'en-tête mensuel
 - Repérage visuel de la date du jour (colonne discrètement surlignée)
@@ -18,7 +18,7 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 - Navigation rapide entre les mois via les flèches ‹ / › encadrant le sélecteur
 - Saisie en plage de dates (mode plage)
 - Picker d'absence positionné automatiquement pour rester visible dans la page
-- Totaux mensuels par collaborateur et lignes "Présents" équipe/global
+- Totaux mensuels par technicien et lignes "Présents" équipe/global
 - Fusion visuelle des zones vides d'en-tête et des fins de lignes "Présents"
   pour une lecture plus compacte
 - Récap annuel avec :
@@ -27,7 +27,7 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 	- CP ancienneté (barème Syntec)
 	- soldes initiaux et soldes restants
 	- séparateurs verticaux pour délimiter les blocs (identitaire / données / totaux)
-- Gestion des collaborateurs (nom, équipe, date d'embauche)
+- Gestion des techniciens (nom, équipe, date d'embauche)
 
 ## Stockage et résilience
 
