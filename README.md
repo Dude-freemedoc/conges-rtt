@@ -18,15 +18,17 @@ des congés/RTT des équipes Support N1 et N2 sur la période Juin 2026 -> Mai
 - Navigation rapide entre les mois via les flèches ‹ / › encadrant le sélecteur
 - Saisie en plage de dates (mode plage)
 - Picker d'absence positionné automatiquement pour rester visible dans la page
+- Mode sombre lisible avec mémorisation de la préférence
 - Totaux mensuels par technicien et lignes "Présents" équipe/global
+- Séparateurs verticaux homogènes sur le planning (après Équipe et avant compteurs)
 - Fusion visuelle des zones vides d'en-tête et des fins de lignes "Présents"
   pour une lecture plus compacte
 - Récap annuel avec :
-	- date d'embauche
-	- ancienneté (ans)
-	- CP ancienneté (barème Syntec)
-	- soldes initiaux et soldes restants
-	- séparateurs verticaux pour délimiter les blocs (identitaire / données / totaux)
+  - date d'embauche
+  - ancienneté (ans)
+  - CP ancienneté (barème Syntec)
+  - soldes initiaux et soldes restants
+  - séparateurs verticaux pour délimiter les blocs (identitaire / données / totaux)
 - Gestion des techniciens (nom, équipe, date d'embauche)
 
 ## Stockage et résilience
@@ -40,11 +42,11 @@ automatiquement vers le secours puis vers le local si nécessaire.
 
 Mirroring et rattrapage automatique :
 - Quand Supabase est disponible, l'écriture est faite sur Supabase avec un
-	miroir best-effort vers JSONbin.
+  miroir best-effort vers JSONbin.
 - Si Supabase tombe pendant une écriture, l'état est écrit sur JSONbin et un
-	miroir "en attente" est conservé localement.
+  miroir "en attente" est conservé localement.
 - Au retour de Supabase, ce miroir en attente est automatiquement repoussé vers
-	Supabase, puis nettoyé.
+  Supabase, puis nettoyé.
 
 Configuration Supabase attendue :
 - table `shared_state`
@@ -67,3 +69,4 @@ Configuration Supabase attendue :
 ## Lancement
 
 Ouvrir `index.html` dans un navigateur moderne.
+

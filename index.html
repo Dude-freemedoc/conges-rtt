@@ -23,6 +23,19 @@
   --danger: #b83c3c;
 }
 
+body[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-a: #101823;
+  --bg-b: #0a101b;
+  --ink: #edf3fa;
+  --ink-muted: #95a6bb;
+  --line: #41556d;
+  --card: rgba(15, 22, 33, 0.96);
+  --accent: #60d5cf;
+  --accent-2: #ffb868;
+  --danger: #ff9090;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -33,6 +46,10 @@ body {
   color: var(--ink);
   background: radial-gradient(circle at 20% 15%, #fffaf0, var(--bg-a) 35%, var(--bg-b) 100%);
   min-height: 100vh;
+}
+
+body[data-theme="dark"] {
+  background: radial-gradient(circle at 20% 15%, #1b2740, var(--bg-a) 35%, var(--bg-b) 100%);
 }
 
 .bg-shape {
@@ -51,12 +68,22 @@ body {
   left: -110px;
 }
 
+body[data-theme="dark"] .bg-shape-a {
+  background: #3b82d1;
+  opacity: 0.12;
+}
+
 .bg-shape-b {
   width: 420px;
   height: 420px;
   background: #ffc067;
   right: -100px;
   bottom: -150px;
+}
+
+body[data-theme="dark"] .bg-shape-b {
+  background: #d4933c;
+  opacity: 0.1;
 }
 
 .app-shell {
@@ -77,6 +104,12 @@ body {
   animation: rise 420ms ease;
 }
 
+body[data-theme="dark"] .app-header,
+body[data-theme="dark"] .card {
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.42);
+}
+
 .app-status {
   background: #f7fbff;
   border: 1px solid #d6e6f3;
@@ -87,10 +120,22 @@ body {
   font-size: 0.82rem;
 }
 
+body[data-theme="dark"] .app-status {
+  background: #172131;
+  border-color: #314156;
+  color: #dce7f4;
+}
+
 .app-status.edit {
   background: #edf8f1;
   border-color: #b9dec6;
   color: #1f5c35;
+}
+
+body[data-theme="dark"] .app-status.edit {
+  background: #11241a;
+  border-color: #254c3a;
+  color: #c7efd4;
 }
 
 .app-status.readonly {
@@ -99,10 +144,22 @@ body {
   color: #1f4f7a;
 }
 
+body[data-theme="dark"] .app-status.readonly {
+  background: #152235;
+  border-color: #294664;
+  color: #cfe0f4;
+}
+
 .app-status.error {
   background: #fff1f1;
   border-color: #efc0c0;
   color: #8a3030;
+}
+
+body[data-theme="dark"] .app-status.error {
+  background: #311619;
+  border-color: #6d3d42;
+  color: #ffc0c0;
 }
 
 @keyframes rise {
@@ -158,6 +215,19 @@ h1 {
   color: var(--ink);
 }
 
+body[data-theme="dark"] .month-selector select,
+body[data-theme="dark"] select,
+body[data-theme="dark"] button,
+body[data-theme="dark"] .employee-form select,
+body[data-theme="dark"] .employee-form button,
+body[data-theme="dark"] .employee-actions button,
+body[data-theme="dark"] .selection-buttons button,
+body[data-theme="dark"] .month-nav-btn {
+  background: #152131;
+  color: var(--ink);
+  border-color: #45586f;
+}
+
 .month-nav-btn {
   display: flex;
   align-items: center;
@@ -177,6 +247,14 @@ h1 {
 
 .month-nav-btn:hover {
   background: #e8f0fb;
+}
+
+body[data-theme="dark"] .month-nav-btn:hover:not(:disabled),
+body[data-theme="dark"] button:hover:not(:disabled),
+body[data-theme="dark"] .employee-form button:hover:not(:disabled),
+body[data-theme="dark"] .employee-actions button:hover:not(:disabled),
+body[data-theme="dark"] .selection-buttons button:hover:not(:disabled) {
+  background: #22324a;
 }
 
 .month-nav-btn:disabled {
@@ -266,6 +344,11 @@ h1 {
   color: #1f5c35;
 }
 
+body[data-theme="dark"] .selection-buttons button.active-toggle {
+  background: #173424;
+  color: #d2f5dc;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -276,7 +359,6 @@ h1 {
 .toolbar #manageEmployeesBtn {
   min-height: 34px;
   padding: 7px 12px;
-  border-color: #cfdcd4;
 }
 
 .header-actions {
@@ -391,6 +473,26 @@ button.danger:hover:not(:disabled) {
   white-space: nowrap;
 }
 
+body[data-theme="dark"] .legend-item {
+  background: rgba(17, 25, 38, 0.96);
+}
+
+body[data-theme="dark"] .legend-label,
+body[data-theme="dark"] .legend-title,
+body[data-theme="dark"] .month-selector,
+body[data-theme="dark"] .selection-group-label,
+body[data-theme="dark"] .subtitle,
+body[data-theme="dark"] .employee-team,
+body[data-theme="dark"] .employee-field,
+body[data-theme="dark"] .modal-header h2,
+body[data-theme="dark"] .employee-list h3,
+body[data-theme="dark"] .employee-form h3,
+body[data-theme="dark"] .code-picker,
+body[data-theme="dark"] .picker-opt,
+body[data-theme="dark"] .picker-duration-btn {
+  color: var(--ink);
+}
+
 .legend-badge {
   display: inline-flex;
   align-items: center;
@@ -423,8 +525,13 @@ button.danger:hover:not(:disabled) {
   overflow-x: auto;
   overflow-y: visible;
   max-height: none;
-  border: 1px solid var(--line);
+  border: 2px solid #bfd0dd;
   border-radius: 12px;
+}
+
+body[data-theme="dark"] .table-wrap {
+  background: rgba(10, 16, 26, 0.68);
+  border-color: rgba(191, 208, 221, 0.62);
 }
 
 .table-wrap.no-scroll {
@@ -439,6 +546,10 @@ table {
   background: #fff;
 }
 
+body[data-theme="dark"] table {
+  background: #0f1823;
+}
+
 th,
 td {
   border: 1px solid #dde8e2;
@@ -448,12 +559,25 @@ td {
   white-space: nowrap;
 }
 
+body[data-theme="dark"] th,
+body[data-theme="dark"] td {
+  border-color: #314156;
+  color: var(--ink);
+}
+
 th.sticky,
 td.sticky {
   position: sticky;
   left: 0;
   z-index: 2;
   background: #f3f8f5;
+}
+
+body[data-theme="dark"] th.sticky,
+body[data-theme="dark"] td.sticky,
+body[data-theme="dark"] th.sticky-2,
+body[data-theme="dark"] td.sticky-2 {
+  background: #172435;
 }
 
 th.sticky-2,
@@ -475,14 +599,29 @@ th.saturday {
   background: #d9ecff;
 }
 
+body[data-theme="dark"] td.saturday,
+body[data-theme="dark"] th.saturday {
+  background: #1b3953;
+}
+
 td.sunday,
 th.sunday {
   background: #ffe1e1;
 }
 
+body[data-theme="dark"] td.sunday,
+body[data-theme="dark"] th.sunday {
+  background: #4a2130;
+}
+
 td.holiday,
 th.holiday {
   background: #dfe4ea;
+}
+
+body[data-theme="dark"] td.holiday,
+body[data-theme="dark"] th.holiday {
+  background: #293241;
 }
 
 #planningTable th.today-col,
@@ -492,12 +631,28 @@ th.holiday {
 
 #planningTable thead th.today-col {
   background: #fff3cd !important;
-  color: #5b4a15;
+  color: #5b4a15 !important;
+  box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
+}
+
+body[data-theme="dark"] #planningTable thead th.today-col {
+  background: #4a3d1d !important;
+  color: #ffe7b0 !important;
+  box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
+}
+
+body[data-theme="dark"] #planningTable thead th.day-first.today-col {
+  border-left-color: rgba(191, 208, 221, 0.62);
   box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
 }
 
 #planningTable td.today-col {
   background-image: linear-gradient(to bottom, rgba(255, 243, 205, 0.22), rgba(255, 243, 205, 0.22));
+  box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
+}
+
+body[data-theme="dark"] #planningTable td.today-col {
+  background-image: linear-gradient(to bottom, rgba(255, 231, 176, 0.1), rgba(255, 231, 176, 0.1));
   box-shadow: inset 1px 0 0 #e4cf91, inset -1px 0 0 #e4cf91;
 }
 
@@ -521,6 +676,47 @@ td.day-cell select {
   border: 1px solid #c8d8cf;
   border-radius: 6px;
   text-align: right;
+}
+
+body[data-theme="dark"] .initial-input {
+  background: #101a27;
+  border-color: #405169;
+  color: var(--ink);
+}
+
+body[data-theme="dark"] .picker-duration {
+  gap: 6px;
+}
+
+body[data-theme="dark"] .code-picker {
+  background: #101a27;
+  border-color: #405169;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+}
+
+body[data-theme="dark"] .picker-duration-btn {
+  background: #182335;
+  color: var(--ink);
+  border-color: #405169;
+}
+
+body[data-theme="dark"] .picker-duration-btn.active {
+  background: #365377;
+  border-color: #365377;
+}
+
+body[data-theme="dark"] .picker-opt {
+  background: #152131;
+  border-color: #405169;
+}
+
+body[data-theme="dark"] .picker-opt-clear {
+  background: #182233;
+  border-color: #405169;
+}
+
+body[data-theme="dark"] .picker-opt:hover {
+  transform: scale(1.04);
 }
 
 td.code-green  { background: #70AD47 !important; color: #fff !important; }
@@ -560,11 +756,22 @@ td.code-slate select {
   font-weight: 600;
 }
 
-#planningTable td[data-total="CP"],
-#planningTable th.totals-sep,
-#planningTable td.presence-end,
+body[data-theme="dark"] .totals,
+body[data-theme="dark"] td.presence-row,
+body[data-theme="dark"] tr.presence-row td,
+body[data-theme="dark"] #annualTable thead th,
+body[data-theme="dark"] #annualTable thead tr th:nth-last-child(-n+9),
+body[data-theme="dark"] #annualTable tr.annual-total-row td {
+  background: #162131;
+  color: var(--ink);
+}
+
 #planningTable .day-first {
   border-left: 2px solid #bfd0dd;
+}
+
+#planningTable .day-last {
+  border-right: 2px solid #bfd0dd;
 }
 
 #planningTable thead th.totals-header {
@@ -584,17 +791,44 @@ tr.team-separator td {
   font-weight: 700;
 }
 
+body[data-theme="dark"] tr.team-separator td {
+  background: #1f2e40;
+  color: #dce8f6;
+}
+
 tr.team-member.team-n1 td {
   background: #f4faff;
+}
+
+body[data-theme="dark"] tr.team-member.team-n1 td {
+  background: #0f1f2f;
+}
+
+body[data-theme="dark"] tr.team-member.team-n1.row-odd td {
+  background: #1d3d5a;
 }
 
 tr.team-member.team-n2 td {
   background: #fff7ef;
 }
 
+body[data-theme="dark"] tr.team-member.team-n2 td {
+  background: #26170f;
+}
+
+body[data-theme="dark"] tr.team-member.team-n2.row-odd td {
+  background: #392412;
+}
+
 tr.team-member:hover td {
-  filter: brightness(0.96);
-  transition: filter 80ms;
+  filter: brightness(0.95);
+  box-shadow: inset 0 0 0 9999px rgba(32, 84, 126, 0.08);
+  transition: filter 80ms, box-shadow 120ms;
+}
+
+body[data-theme="dark"] tr.team-member:hover td {
+  filter: brightness(1.16);
+  box-shadow: inset 0 0 0 9999px rgba(207, 223, 242, 0.08);
 }
 
 tr.team-member.team-n1.row-odd td {
@@ -602,6 +836,30 @@ tr.team-member.team-n1.row-odd td {
 }
 tr.team-member.team-n2.row-odd td {
   background: #ffe3cc;
+}
+
+body[data-theme="dark"] tr.team-member.team-n1 td.sticky,
+body[data-theme="dark"] tr.team-member.team-n1 td.sticky-2,
+body[data-theme="dark"] tr.team-member.team-n1 td.totals {
+  background: #0f1f2f;
+}
+
+body[data-theme="dark"] tr.team-member.team-n1.row-odd td.sticky,
+body[data-theme="dark"] tr.team-member.team-n1.row-odd td.sticky-2,
+body[data-theme="dark"] tr.team-member.team-n1.row-odd td.totals {
+  background: #1d3d5a;
+}
+
+body[data-theme="dark"] tr.team-member.team-n2 td.sticky,
+body[data-theme="dark"] tr.team-member.team-n2 td.sticky-2,
+body[data-theme="dark"] tr.team-member.team-n2 td.totals {
+  background: #26170f;
+}
+
+body[data-theme="dark"] tr.team-member.team-n2.row-odd td.sticky,
+body[data-theme="dark"] tr.team-member.team-n2.row-odd td.sticky-2,
+body[data-theme="dark"] tr.team-member.team-n2.row-odd td.totals {
+  background: #392412;
 }
 
 tr.team-member.team-n1 td.saturday,
@@ -622,6 +880,204 @@ tr.team-member.team-n2 td.holiday,
 tr.team-member.team-n2.row-odd td.holiday {
   background: #dfe4ea;
 }
+
+body[data-theme="dark"] tr.team-member.team-n1 td.saturday,
+body[data-theme="dark"] tr.team-member.team-n1.row-odd td.saturday,
+body[data-theme="dark"] tr.team-member.team-n2 td.saturday,
+body[data-theme="dark"] tr.team-member.team-n2.row-odd td.saturday {
+  background: #1b3953;
+}
+
+body[data-theme="dark"] tr.team-member.team-n1 td.sunday,
+body[data-theme="dark"] tr.team-member.team-n1.row-odd td.sunday,
+body[data-theme="dark"] tr.team-member.team-n2 td.sunday,
+body[data-theme="dark"] tr.team-member.team-n2.row-odd td.sunday {
+  background: #4a2130;
+}
+
+body[data-theme="dark"] tr.team-member.team-n1 td.holiday,
+body[data-theme="dark"] tr.team-member.team-n1.row-odd td.holiday,
+body[data-theme="dark"] tr.team-member.team-n2 td.holiday,
+body[data-theme="dark"] tr.team-member.team-n2.row-odd td.holiday {
+  background: #293241;
+}
+
+body[data-theme="dark"] #planningTable thead th.name,
+body[data-theme="dark"] #planningTable thead th.sticky-2,
+body[data-theme="dark"] #annualTable thead th,
+body[data-theme="dark"] #annualTable thead tr th:nth-last-child(-n+9),
+body[data-theme="dark"] #annualTable tr.annual-total-row td,
+body[data-theme="dark"] #annualTable th:nth-child(3),
+body[data-theme="dark"] #annualTable td:nth-child(3),
+body[data-theme="dark"] #annualTable th:nth-child(14),
+body[data-theme="dark"] #annualTable td:nth-child(14) {
+  background: #182636;
+}
+
+body[data-theme="dark"] #planningTable th.week-blank,
+body[data-theme="dark"] #planningTable th.week-corner,
+body[data-theme="dark"] #planningTable thead th.totals-header,
+body[data-theme="dark"] #planningTable thead th.name,
+body[data-theme="dark"] #planningTable thead th.sticky-2,
+body[data-theme="dark"] #annualTable thead th,
+body[data-theme="dark"] #annualTable thead tr th:nth-last-child(-n+9) {
+  background: #182636;
+  color: var(--ink);
+}
+
+body[data-theme="dark"] #planningTable thead th.week-number,
+body[data-theme="dark"] #planningTable thead tr:nth-child(2) th,
+body[data-theme="dark"] #planningTable thead tr:nth-child(3) th {
+  background: #152131;
+  color: var(--ink);
+}
+
+body[data-theme="dark"] #planningTable thead th.week-number.current-week {
+  background: #4a3d1d !important;
+  color: #ffe7b0;
+}
+
+
+
+body[data-theme="dark"] #planningTable th.week-blank:not(.totals-top-block) {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body[data-theme="dark"] #planningTable thead th.name,
+body[data-theme="dark"] #planningTable thead th.sticky-2,
+body[data-theme="dark"] #planningTable thead th.week-blank,
+body[data-theme="dark"] #planningTable thead th.week-corner,
+body[data-theme="dark"] #planningTable thead th.totals-header,
+body[data-theme="dark"] #annualTable thead th {
+  border-color: #314156;
+}
+
+body[data-theme="dark"] #planningTable thead th.totals-top-block {
+  border-left: 0;
+  box-shadow: none;
+}
+
+body[data-theme="dark"] #planningTable thead th.totals-sep {
+  border-left: 0;
+  box-shadow: none;
+}
+
+body[data-theme="dark"] #annualTable thead th:nth-child(3),
+body[data-theme="dark"] #annualTable thead th:nth-child(14) {
+  border-left: 2px solid rgba(191, 208, 221, 0.62);
+}
+
+body[data-theme="dark"] #planningTable .day-first {
+  border-left-color: rgba(191, 208, 221, 0.62);
+}
+
+body[data-theme="dark"] #planningTable .day-last {
+  border-right-color: rgba(191, 208, 221, 0.62);
+}
+
+body[data-theme="dark"] #annualTable td:nth-child(3),
+body[data-theme="dark"] #annualTable td:nth-child(14) {
+  border-left-color: rgba(191, 208, 221, 0.62);
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n1 td:nth-last-child(-n+9) {
+  background: #0f1f2f;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n2 td:nth-last-child(-n+9) {
+  background: #26170f;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n1.row-odd td:nth-last-child(-n+9) {
+  background: #1d3d5a;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n2.row-odd td:nth-last-child(-n+9) {
+  background: #392412;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n1 td:nth-child(-n+2) {
+  background: #0f1f2f;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n1.row-odd td:nth-child(-n+2) {
+  background: #1d3d5a;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n2 td:nth-child(-n+2) {
+  background: #26170f;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n2.row-odd td:nth-child(-n+2) {
+  background: #392412;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n1 td,
+body[data-theme="dark"] #annualTable tr.team-member.team-n1.row-odd td {
+  background: #132233;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n1.row-odd td {
+  background: #183044;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n2 td,
+body[data-theme="dark"] #annualTable tr.team-member.team-n2.row-odd td {
+  background: #251d16;
+}
+
+body[data-theme="dark"] #annualTable tr.team-member.team-n2.row-odd td {
+  background: #2f2418;
+}
+
+body[data-theme="dark"] #annualTable thead tr th:nth-child(-n+2),
+body[data-theme="dark"] #annualTable tbody tr td:nth-child(-n+2) {
+  background: #172435;
+}
+
+body[data-theme="dark"] .employee-form h3,
+body[data-theme="dark"] .employee-list h3,
+body[data-theme="dark"] .modal-header h2,
+body[data-theme="dark"] .employee-name,
+body[data-theme="dark"] .employee-team {
+  color: var(--ink);
+}
+
+body[data-theme="dark"] .employee-item {
+  background: #152131;
+  border-color: #324156;
+}
+
+body[data-theme="dark"] .modal-content {
+  background: #101926;
+  border-color: #324156;
+}
+
+body[data-theme="dark"] .modal-header {
+  border-bottom-color: #324156;
+}
+
+body[data-theme="dark"] hr {
+  border-top-color: #324156;
+}
+
+body[data-theme="dark"] .legend-badge.code-green  { background: #67b24d; }
+body[data-theme="dark"] .legend-badge.code-orange { background: #e47b2f; }
+body[data-theme="dark"] .legend-badge.code-purple { background: #a96cc3; }
+body[data-theme="dark"] .legend-badge.code-blue   { background: #4aa0e0; }
+body[data-theme="dark"] .legend-badge.code-teal   { background: #27baa6; }
+body[data-theme="dark"] .legend-badge.code-red    { background: #ff6666; }
+body[data-theme="dark"] .legend-badge.code-gray   { background: #8f9aaa; }
+body[data-theme="dark"] .legend-badge.code-slate  { background: #78909c; }
+
+body[data-theme="dark"] td.code-green  { background: #4f8b39 !important; }
+body[data-theme="dark"] td.code-orange { background: #c96522 !important; }
+body[data-theme="dark"] td.code-purple { background: #8b4fa8 !important; }
+body[data-theme="dark"] td.code-blue   { background: #2f7fba !important; }
+body[data-theme="dark"] td.code-teal   { background: #158a78 !important; }
+body[data-theme="dark"] td.code-red    { background: #d63f3f !important; }
+body[data-theme="dark"] td.code-gray   { background: #717a87 !important; }
+body[data-theme="dark"] td.code-slate  { background: #5e7381 !important; }
 
 tr.team-member.team-n1 td.sticky,
 tr.team-member.team-n1 td.sticky-2 {
@@ -1020,6 +1476,10 @@ td.day-cell.range-preview {
   color: var(--ink);
 }
 
+body[data-theme="dark"] .employee-form select {
+  background: #12202f;
+}
+
 .employee-form button {
   border-radius: 10px;
   border: 1px solid var(--line);
@@ -1063,6 +1523,11 @@ td.day-cell.range-preview {
   border-radius: 10px;
   margin-bottom: 8px;
   background: #f8fbf9;
+}
+
+body[data-theme="dark"] .employee-item {
+  background: #152131;
+  border-color: #2c3a50;
 }
 
 .employee-info {
@@ -1113,6 +1578,17 @@ hr {
   border: none;
   border-top: 1px solid #dde8e2;
   margin: 20px 0;
+}
+
+body[data-theme="dark"] hr {
+  border-top-color: #2a394d;
+}
+
+.theme-toggle {
+  min-height: 34px;
+  width: 34px;
+  padding: 0;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 900px) {
@@ -1193,13 +1669,7 @@ hr {
           <div class="header-actions">
             <div class="toolbar">
               <button id="manageEmployeesBtn" type="button" disabled title="Gérer les techniciens : ajouter, modifier ou supprimer un technicien">Gérer techniciens</button>
-              <div class="selection-group">
-                <span class="selection-group-label">Type de sélection :</span>
-                <div class="selection-buttons">
-                  <button id="rangeModeBtn" type="button" disabled title="Saisie simple : sélectionner une seule case">Saisie simple</button>
-                  <button id="workingDaysOnlyBtn" type="button" disabled title="Jours ouvrés : exclure weekends et fériés">Jours ouvrés</button>
-                </div>
-              </div>
+              <button id="themeToggleBtn" type="button" class="month-nav-btn theme-toggle" title="Activer le mode sombre" aria-label="Activer le mode sombre">&#9790;</button>
             </div>
           </div>
         </div>
@@ -1208,6 +1678,13 @@ hr {
       <section class="card">
         <div class="card-header-with-controls">
           <h2>Planning mensuel</h2>
+          <div class="selection-group">
+            <span class="selection-group-label">Type de sélection :</span>
+            <div class="selection-buttons">
+              <button id="rangeModeBtn" type="button" disabled title="Saisie simple : sélectionner une seule case">Saisie simple</button>
+              <button id="workingDaysOnlyBtn" type="button" disabled title="Jours ouvrés : exclure weekends et fériés">Jours ouvrés</button>
+            </div>
+          </div>
           <div class="month-selector">
             <span>Mois :</span>
             <button id="prevMonthBtn" class="month-nav-btn" type="button" title="Mois précédent">&#8249;</button>
@@ -1449,6 +1926,7 @@ const workingDaysOnlyBtn = document.getElementById("workingDaysOnlyBtn");
 const appStatus = document.getElementById("appStatus");
 
 const manageEmployeesBtn = document.getElementById("manageEmployeesBtn");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
 const employeeModal = document.getElementById("employeeModal");
 const modalCloseBtn = document.getElementById("modalCloseBtn");
 const employeeName = document.getElementById("employeeName");
@@ -1474,6 +1952,7 @@ let rangeSelection = {
   hoverDay: null
 };
 let allowAllDays = false;
+const THEME_STORAGE_KEY = "gestion-conges-theme-v1";
 let appContext = {
   provider: null,
   mode: "local",
@@ -1486,8 +1965,47 @@ let appContext = {
   latestPersistId: 0
 };
 
+
+function getPreferredTheme() {
+  try {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === "dark" || storedTheme === "light") {
+      return storedTheme;
+    }
+  } catch (e) {
+    console.warn("Impossible de lire le thème enregistré", e);
+  }
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function persistTheme(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (e) {
+    console.warn("Impossible d'enregistrer le thème", e);
+  }
+}
+
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  updateThemeToggleUi();
+}
+
+function updateThemeToggleUi() {
+  const isDark = document.body.dataset.theme === "dark";
+  themeToggleBtn.innerHTML = isDark ? "&#9728;" : "&#9790;";
+  themeToggleBtn.title = isDark ? "Revenir au mode clair" : "Activer le mode sombre";
+  themeToggleBtn.setAttribute("aria-label", themeToggleBtn.title);
+}
+
+function toggleTheme() {
+  const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(nextTheme);
+  persistTheme(nextTheme);
+}
 function extractEditorKeyFromURL() {
   const params = new URLSearchParams(window.location.search);
+applyTheme(getPreferredTheme());
   const key = params.get("key");
   if (key) {
     try {
@@ -1591,6 +2109,8 @@ async function init() {
     renderPlanning();
     updateMonthNavBtns();
   });
+
+  themeToggleBtn.addEventListener("click", toggleTheme);
 
   updateMonthNavBtns();
 
@@ -2862,18 +3382,19 @@ function renderPlanning() {
       }
       const isCurrentWeek = Number.isInteger(todayDay) && todayDay >= day && todayDay < day + span;
       const isFirstWeek = day === 1;
-      const weekClass = ["week-number", isCurrentWeek ? "current-week" : "", isFirstWeek ? "day-first" : ""].filter(Boolean).join(" ");
+      const isLastWeek = day + span - 1 === days;
+      const weekClass = ["week-number", isCurrentWeek ? "current-week" : "", isFirstWeek ? "day-first" : "", isLastWeek ? "day-last" : ""].filter(Boolean).join(" ");
       row0.innerHTML += `<th class="${weekClass}" colspan="${span}" title="Semaine ${weekNumber}">S${String(weekNumber).padStart(2, "0")}</th>`;
       day += span;
     }
   }
-  row0.innerHTML += '<th class="week-blank totals-header totals-sep" colspan="9" rowspan="2"></th>';
+  row0.innerHTML += '<th class="week-blank totals-header totals-sep totals-top-block" colspan="9" rowspan="2"></th>';
 
   const row1 = document.createElement("tr");
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
-    const weekdayClass = [dayType.headerClass, day === todayDay ? "today-col" : "", day === 1 ? "day-first" : ""].filter(Boolean).join(" ");
+    const weekdayClass = [dayType.headerClass, day === todayDay ? "today-col" : "", day === 1 ? "day-first" : "", day === days ? "day-last" : ""].filter(Boolean).join(" ");
     row1.innerHTML += `<th class="${weekdayClass}" title="${dayType.title}">${weekdayShort[date.getDay()]}</th>`;
   }
 
@@ -2885,7 +3406,7 @@ function renderPlanning() {
   for (let day = 1; day <= days; day += 1) {
     const date = new Date(year, monthIndex, day);
     const dayType = getDayType(date);
-    const dayNumberClass = [dayType.headerClass, day === todayDay ? "today-col" : "", day === 1 ? "day-first" : ""].filter(Boolean).join(" ");
+    const dayNumberClass = [dayType.headerClass, day === todayDay ? "today-col" : "", day === 1 ? "day-first" : "", day === days ? "day-last" : ""].filter(Boolean).join(" ");
     row2.innerHTML += `<th class="${dayNumberClass}" title="${dayType.title}">${day}</th>`;
   }
   row2.innerHTML += ["<th class='totals-header totals-sep'>CP</th>", "<th class='totals-header'>RTT</th>", "<th class='totals-header'>FR</th>", "<th class='totals-header'>CSS</th>", "<th class='totals-header'>FAM</th>", "<th class='totals-header'>PM</th>", "<th class='totals-header'>MAL</th>", "<th class='totals-header'>RC</th>", "<th class='totals-header'>DIV</th>"].join("");
@@ -2918,6 +3439,7 @@ function renderPlanning() {
         const td = document.createElement("td");
         td.className = "day-cell";
         if (day === 1) td.classList.add("day-first");
+        if (day === days) td.classList.add("day-last");
         if (day === todayDay) td.classList.add("today-col");
         if (dayType.isSaturday) td.classList.add("saturday");
         if (dayType.isSunday) td.classList.add("sunday");
@@ -3079,6 +3601,7 @@ function createPresenceRow(members, monthKey, year, monthIndex, days, label, tod
     const td = document.createElement("td");
     td.className = "presence-cell";
     if (day === 1) td.classList.add("day-first");
+    if (day === days) td.classList.add("day-last");
     if (day === todayDay) td.classList.add("today-col");
     if (dayType.isSaturday) td.classList.add("saturday");
     if (dayType.isSunday) td.classList.add("sunday");
